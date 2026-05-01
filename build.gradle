@@ -1,0 +1,84 @@
+plugins {
+    id("io.micronaut.application") version "4.6.2"
+    id("com.gradleup.shadow") version "8.3.9"
+    id("io.micronaut.aot") version "4.6.2"
+}
+
+version = "0.1"
+group = "com.bit.recall"
+
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    annotationProcessor("org.projectlombok:lombok")
+    annotationProcessor("io.micronaut:micronaut-http-validation")
+    annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
+    annotationProcessor("io.micronaut.validation:micronaut-validation-processor")
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-jackson-databind")
+    implementation("io.micronaut.graphql:micronaut-graphql")
+    implementation("io.micronaut.serde:micronaut-serde-jackson")
+    implementation("jakarta.annotation:jakarta.annotation-api")
+    implementation("org.slf4j:jul-to-slf4j")
+    compileOnly("org.projectlombok:lombok")
+    runtimeOnly("ch.qos.logback:logback-classic")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+
+
+application {
+    mainClass = "com.bit.recall.Application"
+}
+
+java {
+    sourceCompatibility = JavaVersion.toVersion("21")
+    targetCompatibility = JavaVersion.toVersion("21")
+}
+
+
+
+
+graalvmNative.toolchainDetection = false
+
+
+
+
+
+micronaut {
+    runtime("netty")
+    testRuntime("junit5")
+    processing {
+        incremental(true)
+        annotations("com.bit.recall.*")
+    }
+    aot {
+        // Please review carefully the optimizations enabled below
+        // Check https://micronaut-projects.github.io/micronaut-aot/latest/guide/ for more details
+        optimizeServiceLoading = false
+        convertYamlToJava = false
+        precomputeOperations = true
+        cacheEnvironment = true
+        optimizeClassLoading = true
+        deduceEnvironment = true
+        optimizeNetty = true
+        replaceLogbackXml = true
+    }
+
+}
+
+
+tasks.named("dockerfileNative") {
+    jdkVersion = "21"
+}
+
+
+
+
+
+
+
