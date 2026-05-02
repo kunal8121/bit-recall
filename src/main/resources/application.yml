@@ -6,8 +6,8 @@ datasources:
   default:
     url: jdbc:postgresql://localhost:5433/bit-recall?options=-c%20timezone=Asia/Kolkata
     driverClassName: org.postgresql.Driver
-    username: root
-    password: root123
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     dialect: POSTGRES
 
 jpa:
