@@ -1,0 +1,33 @@
+micronaut:
+  application:
+    name: bit-recall
+  caches:
+    default:
+      maximum-size: 20
+
+datasources:
+  default:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
+    dialect: H2
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 1
+      initialization-fail-timeout: 0
+
+jpa:
+  default:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        hbm2ddl:
+          auto: create-drop
+        show_sql: false
+        format_sql: false
+        jdbc:
+          batch_size: 20
+    entity-scan:
+      packages: 'com.bit.recall'
+
