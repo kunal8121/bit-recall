@@ -14,18 +14,38 @@ repositories {
 }
 
 dependencies {
+    annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
+    annotationProcessor("io.micronaut.data:micronaut-data-processor")
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("io.micronaut:micronaut-http-validation")
+    annotationProcessor("io.micronaut.jsonschema:micronaut-json-schema-processor")
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     annotationProcessor("io.micronaut.validation:micronaut-validation-processor")
+
+    implementation("io.micronaut.data:micronaut-data-jpa")
     implementation("io.micronaut:micronaut-http-client")
     implementation("io.micronaut:micronaut-jackson-databind")
+    implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.graphql:micronaut-graphql")
+    implementation("io.micronaut.jsonschema:micronaut-json-schema-annotations")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
+    implementation("io.micronaut.sql:micronaut-hibernate-jpa")
+    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
+    implementation("io.micronaut.validation:micronaut-validation")
     implementation("jakarta.annotation:jakarta.annotation-api")
+    implementation("jakarta.validation:jakarta.validation-api")
     implementation("org.slf4j:jul-to-slf4j")
+    implementation "org.mapstruct:mapstruct:1.5.5.Final"
+
     compileOnly("org.projectlombok:lombok")
+
     runtimeOnly("ch.qos.logback:logback-classic")
+    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.yaml:snakeyaml")
+
+    testImplementation("io.micronaut.jsonschema:micronaut-json-schema-validation")
+    testImplementation("io.micronaut.data:micronaut-data-hibernate-jpa")
+    testImplementation("com.h2database:h2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

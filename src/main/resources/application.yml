@@ -1,0 +1,22 @@
+micronaut:
+  application:
+    name: bit-recall
+
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5433/bit-recall?options=-c%20timezone=Asia/Kolkata
+    driverClassName: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    dialect: POSTGRES
+
+jpa:
+  default:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: update
+        show_sql: false
+    entity-scan:
+      packages: 'com.bit.recall'
+
