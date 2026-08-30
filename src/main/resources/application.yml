@@ -1,6 +1,22 @@
 micronaut:
   application:
     name: bit-recall
+  
+  # Security Configuration
+  security:
+    enabled: true
+    authentication: bearer
+    token:
+      jwt:
+        enabled: true
+        # Use environment variable in production: JWT_SECRET
+        secret: ${JWT_SECRET}
+        generator:
+          access-token:
+            expiration: 3600  # 1 hour in seconds
+        validation:
+          claims-validators:
+            expiration: true
 
 datasources:
   default:

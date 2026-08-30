@@ -1,0 +1,69 @@
+package com.bit.recall.controller;
+
+import com.bit.recall.domain.model.CreateTopicRequest;
+import com.bit.recall.domain.model.TopicResponse;
+import com.bit.recall.domain.Topic;
+import com.bit.recall.domain.User;
+import com.bit.recall.mapper.RestTopicMapper;
+import com.bit.recall.repo.UserRepository;
+import com.bit.recall.service.TopicServiceImpl;
+import io.micronaut.core.version.annotation.Version;
+import io.micronaut.http.annotation.*;
+import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.rules.SecurityRule;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Controller("api/{version}/topics")
+@RequiredArgsConstructor
+@Secured(SecurityRule.IS_AUTHENTICATED)
+public class TopicController {
+    private static final String VERSION = "1";
+    private final TopicServiceImpl topicsService;
+    private final UserRepository userRepository;
+
+    @Version(VERSION)
+    @Post
+    public TopicResponse createForAuthenticatedUser(
+            @Body @Valid CreateTopicRequest request,
+            Principal principal) {
+
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NoSuchElementException("User not found with id: " + username));
+
+        Topic createdTopic = topicsService.createTopicWithUser(request, user);
+        return RestTopicMapper.INSTANCE.toTopicResponse(createdTopic);
+    }
+
+    @Version(VERSION)
+    @Get("/{id}")
+    public TopicResponse get(@PathVariable String id) {
+        Topic Topic = topicsService.getTopicById(id);
+        return RestTopicMapper.INSTANCE.toTopicResponse(Topic);
+    }
+
+    @Version(VERSION)
+    @Put("/{id}")
+    public TopicResponse update(@PathVariable String id, @Body @Valid CreateTopicRequest restCreateTopicRequest) {
+        Topic Topic = topicsService.updateTopic(id, RestTopicMapper.INSTANCE.toTopic(restCreateTopicRequest));
+        return RestTopicMapper.INSTANCE.toTopicResponse(Topic);
+    }
+
+    @Version(VERSION)
+    @Get
+    public List<TopicResponse> getAll() {
+        List<Topic> Topics = topicsService.findAll();
+        return Topics.stream().map(RestTopicMapper.INSTANCE::toTopicResponse).toList();
+    }
+
+    @Version(VERSION)
+    @Delete("/{id}")
+    public void delete(@PathVariable String id) {
+        topicsService.deleteTopicById(id);
+    }
+}
