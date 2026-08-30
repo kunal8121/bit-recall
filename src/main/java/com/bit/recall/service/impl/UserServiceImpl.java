@@ -1,13 +1,10 @@
-package com.bit.recall.service;
+package com.bit.recall.service.impl;
 
 import com.bit.recall.domain.User;
 import com.bit.recall.repo.UserRepository;
+import com.bit.recall.service.UserService;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Singleton
 @RequiredArgsConstructor

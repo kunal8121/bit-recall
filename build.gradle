@@ -21,6 +21,7 @@ dependencies {
     annotationProcessor("io.micronaut.jsonschema:micronaut-json-schema-processor")
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     annotationProcessor("io.micronaut.validation:micronaut-validation-processor")
+    annotationProcessor("io.micronaut.security:micronaut-security-annotations")
 
     implementation("io.micronaut.data:micronaut-data-jpa")
     implementation("io.micronaut:micronaut-http-client")
@@ -36,6 +37,9 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api")
     implementation("org.slf4j:jul-to-slf4j")
     implementation "org.mapstruct:mapstruct:1.5.5.Final"
+    implementation("io.micronaut.security:micronaut-security")
+    implementation("io.micronaut.security:micronaut-security-jwt")
+    implementation("org.mindrot:jbcrypt:0.4")
 
     compileOnly("org.projectlombok:lombok")
 
