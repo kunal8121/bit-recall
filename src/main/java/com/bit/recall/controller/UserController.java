@@ -5,7 +5,7 @@ import com.bit.recall.domain.model.SignUpRequest;
 import com.bit.recall.domain.User;
 import com.bit.recall.mapper.RestUserMapper;
 import com.bit.recall.security.PasswordEncoder;
-import com.bit.recall.service.UserServiceImpl;
+import com.bit.recall.service.impl.UserServiceImpl;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;

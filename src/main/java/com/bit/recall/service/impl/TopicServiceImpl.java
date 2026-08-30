@@ -1,4 +1,4 @@
-package com.bit.recall.service;
+package com.bit.recall.service.impl;
 
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.Topic;
@@ -6,6 +6,7 @@ import com.bit.recall.domain.User;
 import com.bit.recall.domain.model.CreateTopicRequest;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
+import com.bit.recall.service.TopicService;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.server.exceptions.NotFoundException;
 import jakarta.inject.Singleton;

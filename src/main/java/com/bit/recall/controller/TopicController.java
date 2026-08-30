@@ -6,7 +6,7 @@ import com.bit.recall.domain.Topic;
 import com.bit.recall.domain.User;
 import com.bit.recall.mapper.RestTopicMapper;
 import com.bit.recall.repo.UserRepository;
-import com.bit.recall.service.TopicServiceImpl;
+import com.bit.recall.service.impl.TopicServiceImpl;
 import io.micronaut.core.version.annotation.Version;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;

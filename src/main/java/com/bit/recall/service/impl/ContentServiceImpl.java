@@ -1,4 +1,4 @@
-package com.bit.recall.service;
+package com.bit.recall.service.impl;
 
 
 import com.bit.recall.domain.Content;
@@ -7,6 +7,7 @@ import com.bit.recall.domain.model.CreateContentRequest;
 import com.bit.recall.domain.Topic;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
+import com.bit.recall.service.ContentService;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
