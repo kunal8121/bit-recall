@@ -34,23 +34,5 @@ public class UserController {
         User createdUser = userServiceImpl.createUser(user);
         return RestUserMapper.INSTANCE.toRestUser(createdUser);
     }
-
-//    @Get("/{id}")
-//    public RestUser get(@PathVariable String id) {
-//        User user = userServiceImpl.getUserById(id);
-//        return RestUserMapper.INSTANCE.toRestUser(user);
-//    }
-//
-//    @Get
-//    public List<RestUser> getAll() {
-//        List<User> users = userServiceImpl.findAll();
-//        return users.stream().map(RestUserMapper.INSTANCE::toRestUser).toList();
-//    }
-//
-//    @Delete
-//    public void delete(@PathVariable String id) {
-//        userServiceImpl.deleteUserById(id);
-//    }
-
 }
 
