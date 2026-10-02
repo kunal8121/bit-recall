@@ -10,8 +10,10 @@ import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.ContentService;
 import com.bit.recall.utils.TokenCounter;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import jakarta.inject.Singleton;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +30,8 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class ContentServiceImpl implements ContentService {
 
-    private static final int MAX_TOKEN_LIMIT = 20000;
+    @Value("${bit-recall.content.max-tokens: 20000}")
+    private final int MAX_TOKEN_LIMIT;
 
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;

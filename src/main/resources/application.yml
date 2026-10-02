@@ -38,7 +38,9 @@ jpa:
 
 bit-recall:
   base64:
-    secret}
+    secret: ${BASE64_SECRET}
+  content:
+    max-tokens: 20000
 
 resilience4j:
   ratelimiter:
