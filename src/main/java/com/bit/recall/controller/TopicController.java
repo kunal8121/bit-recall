@@ -9,6 +9,8 @@ import com.bit.recall.repo.UserRepository;
 import com.bit.recall.service.impl.TopicServiceImpl;
 import io.micronaut.core.version.annotation.Version;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import java.util.NoSuchElementException;
 @Controller("api/{version}/topics")
 @RequiredArgsConstructor
 @Secured(SecurityRule.IS_AUTHENTICATED)
+@ExecuteOn(TaskExecutors.IO)
 public class TopicController {
     private static final String VERSION = "1";
     private final TopicServiceImpl topicsService;

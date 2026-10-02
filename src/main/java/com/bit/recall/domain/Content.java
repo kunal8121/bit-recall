@@ -27,4 +27,11 @@ public class Content {
 
     @DateCreated
     private Instant createdAt;
+
+    @Builder.Default
+    private Status status = Status.UNPROCESSED;
+
+    private enum Status {
+        UNPROCESSED, PROCESSED, PROCESSING_FAILED
+    }
 }

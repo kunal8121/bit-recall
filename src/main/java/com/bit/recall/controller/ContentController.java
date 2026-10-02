@@ -4,28 +4,41 @@ import com.bit.recall.domain.model.CreateContentRequest;
 import com.bit.recall.domain.model.ContentResponse;
 import com.bit.recall.mapper.RestContentMapper;
 import com.bit.recall.service.ContentService;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.micronaut.core.version.annotation.Version;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import java.security.Principal;
 import java.util.List;
 
 @Controller("api/{version}")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @RequiredArgsConstructor
+@ExecuteOn(TaskExecutors.IO)
 public class ContentController {
 
     private static final String VERSION = "1";
     private final ContentService contentService;
+//    private final RateLimiterRegistry rateLimiterRegistry;
 
     @Version(VERSION)
     @Post("/topics/{topicId}/contents")
-    public ContentResponse createContent(@PathVariable String topicId, @Body @Valid CreateContentRequest createContentRequest) {
-         var content =  contentService.createContent(topicId, createContentRequest);
-         return RestContentMapper.INSTANCE.toContentResponse(content);
+    public ContentResponse createContent(@PathVariable String topicId,
+                                         @Body @Valid CreateContentRequest createContentRequest,
+                                         Principal principal) {
+//        var userId = principal.getName();
+//        var limiter = rateLimiterRegistry.rateLimiter("tenant-" + userId, "aiServiceRateLimiter");
+//        if (!limiter.acquirePermission()) {
+//            throw new RuntimeException("Rate limit exceeded for user: " + userId);
+//        }
+        var content =  contentService.createContent(topicId, createContentRequest);
+        return RestContentMapper.INSTANCE.toContentResponse(content);
     }
 
     @Version(VERSION)

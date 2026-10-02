@@ -36,3 +36,20 @@ jpa:
     entity-scan:
       packages: 'com.bit.recall'
 
+bit-recall:
+  base64:
+    secret}
+
+resilience4j:
+  ratelimiter:
+    configs:
+      default:                     # base template
+        limitForPeriod: 5
+        limitRefreshPeriod: 10s
+        timeoutDuration: 0ms
+    instances:
+      aiServiceRateLimiter:
+        baseConfig: default
+
+openapi:
+  url: http://localhost:8080

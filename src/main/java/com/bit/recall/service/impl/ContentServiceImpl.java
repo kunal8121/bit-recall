@@ -2,12 +2,14 @@ package com.bit.recall.service.impl;
 
 
 import com.bit.recall.domain.Content;
+import com.bit.recall.domain.model.ContentCreatedEvent;
 import com.bit.recall.domain.model.ContentResponse;
 import com.bit.recall.domain.model.CreateContentRequest;
 import com.bit.recall.domain.Topic;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.ContentService;
+import io.micronaut.context.event.ApplicationEventPublisher;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class ContentServiceImpl implements ContentService {
 
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;
+    private final ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
 
     @Override
     public Content createContent(String topicId, CreateContentRequest createContentRequest) {
@@ -41,6 +44,8 @@ public class ContentServiceImpl implements ContentService {
                 .createdAt(Instant.now())
                 .build();
         contentRepository.save(content);
+        log.info("Content created with id: {} for topicId: {}", content.getId(), topicId);
+        publishEvent(content);
         return content;
     }
 
@@ -87,6 +92,18 @@ public class ContentServiceImpl implements ContentService {
                 });
 
         return updateableContent;
+    }
+
+    private void publishEvent(Content content) {
+        ContentCreatedEvent event = ContentCreatedEvent.builder()
+                .id(content.getId().toString())
+                .topicId(content.getTopic().getId().toString())
+                .contentId(content.getId().toString())
+                .text(content.getText())
+                .createdAt(content.getCreatedAt())
+                .build();
+        contentPublisher.publishEvent(event);
+        log.info("Published ContentCreatedEvent for contentId: {}", content.getId());
     }
 
     private Topic findTopicByID(String topicId) {
