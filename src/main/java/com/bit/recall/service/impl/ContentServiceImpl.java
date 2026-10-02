@@ -9,6 +9,7 @@ import com.bit.recall.domain.Topic;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.ContentService;
+import com.bit.recall.utils.TokenCounter;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +28,11 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class ContentServiceImpl implements ContentService {
 
+    private static final int MAX_TOKEN_LIMIT = 20000;
+
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;
+    private final TokenCounter tokenCounter;
     private final ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
 
     @Override
@@ -37,6 +41,13 @@ public class ContentServiceImpl implements ContentService {
         if (topic == null) {
             throw new NoSuchElementException("Topic not found with id: %s ,Create topicId First and add contents".formatted(topicId));
         }
+
+        //count tokens before creating content
+        var tokenCount = tokenCounter.countTokens(createContentRequest.text());
+        if(tokenCount > MAX_TOKEN_LIMIT) {
+            throw new IllegalArgumentException("Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT + ". Current token count: " + tokenCount);
+        }
+
         Content content = Content.builder()
                 .id(UUID.randomUUID())
                 .text(createContentRequest.text())

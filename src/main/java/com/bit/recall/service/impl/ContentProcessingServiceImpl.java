@@ -48,7 +48,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
             AIService aiService = aiServiceFactory.getService(preferredAiProvider);
             String decryptedApiKey = encryptionService.decrypt(event.apiKey());
             List<RecallCardDto> recallCardDtos = processText(decryptedApiKey, event.text(), aiService);
-            persistRecallItem(recallCardDtos,
+            persistRecallItem( recallCardDtos,
                               fetchTopic(event.topicId()).get(),
                               fetchContent(event.contentId()).get());
         } catch (RuntimeException e) {
