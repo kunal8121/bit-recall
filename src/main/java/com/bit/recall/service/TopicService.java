@@ -12,7 +12,7 @@ public interface TopicService {
 
     Topic getTopicById(String id, String userId);
 
-    List<Topic> findAll();
+    List<Topic> findAll(String userId);
 
     void deleteTopicById(String id, String userId);
 

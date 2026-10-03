@@ -62,8 +62,8 @@ public class TopicController {
 
     @Version(VERSION)
     @Get
-    public List<TopicResponse> getAll() {
-        List<Topic> Topics = topicsService.findAll();
+    public List<TopicResponse> getAll(Principal principal) {
+        List<Topic> Topics = topicsService.findAll(principal.getName());
         return Topics.stream().map(RestTopicMapper.INSTANCE::toTopicResponse).toList();
     }
 

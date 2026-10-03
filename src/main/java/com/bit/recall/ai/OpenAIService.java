@@ -2,20 +2,15 @@ package com.bit.recall.ai;
 
 import com.bit.recall.ai.client.OpenApiClient;
 import com.bit.recall.ai.client.OpenApiRequest;
+import com.bit.recall.domain.model.RecallCardDto;
+import com.bit.recall.domain.model.RecallCardDtoWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micronaut.http.HttpHeaders;
-import io.micronaut.http.HttpRequest;
-import io.micronaut.http.MediaType;
-import io.micronaut.http.client.BlockingHttpClient;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.http.HttpClient;
 import java.util.List;
-import java.util.Map;
-
-import static io.micronaut.runtime.Micronaut.build;
 
 @Singleton
 @Slf4j
@@ -48,6 +43,10 @@ public class OpenAIService implements AIService {
                     .build();
             var openApiResponse = openApiClient.generateCompletion(BEARER_PREFIX + apiKey, openApiRequest);
             var jsonContent = openApiResponse.choices().get(0).message().content();
+            if (responseType == RecallCardDtoWrapper.class) {
+                var recallCards = objectMapper.readValue(jsonContent, new TypeReference<List<RecallCardDto>>() {});
+                return responseType.cast(new RecallCardDtoWrapper(recallCards));
+            }
             return objectMapper.readValue(jsonContent, responseType);
         } catch (Exception e) {
             log.error("Error executing OpenAI request", e);
@@ -57,6 +56,6 @@ public class OpenAIService implements AIService {
 
     @Override
     public AIProvider getProvider() {
-        return AIProvider.OPENAPI; // Assuming OpenAI corresponds to OPENAPI
+        return AIProvider.OPENAI; // Assuming OpenAI corresponds to OPENAI
     }
 }

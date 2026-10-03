@@ -68,8 +68,8 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
-    public List<Topic> findAll() {
-        return topicRepository.findAll();
+    public List<Topic> findAll(String userId) {
+        return topicRepository.findAllByUserId(UUID.fromString(userId));
     }
 
     @Override

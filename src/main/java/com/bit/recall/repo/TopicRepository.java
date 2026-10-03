@@ -4,6 +4,7 @@ import com.bit.recall.domain.Topic;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface TopicRepository extends JpaRepository<Topic, UUID> {
             UUID topicId,
             UUID userId
     );
+
+    List<Topic> findAllByUserId(UUID userId);
 }
