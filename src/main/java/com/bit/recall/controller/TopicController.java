@@ -6,9 +6,12 @@ import com.bit.recall.domain.Topic;
 import com.bit.recall.domain.User;
 import com.bit.recall.mapper.RestTopicMapper;
 import com.bit.recall.repo.UserRepository;
+import com.bit.recall.service.TopicService;
 import com.bit.recall.service.impl.TopicServiceImpl;
 import io.micronaut.core.version.annotation.Version;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.validation.Valid;
@@ -21,9 +24,10 @@ import java.util.NoSuchElementException;
 @Controller("api/{version}/topics")
 @RequiredArgsConstructor
 @Secured(SecurityRule.IS_AUTHENTICATED)
+@ExecuteOn(TaskExecutors.IO)
 public class TopicController {
     private static final String VERSION = "1";
-    private final TopicServiceImpl topicsService;
+    private final TopicService topicsService;
     private final UserRepository userRepository;
 
     @Version(VERSION)
@@ -42,28 +46,30 @@ public class TopicController {
 
     @Version(VERSION)
     @Get("/{id}")
-    public TopicResponse get(@PathVariable String id) {
-        Topic Topic = topicsService.getTopicById(id);
+    public TopicResponse get(@PathVariable String id, Principal principal) {
+        Topic Topic = topicsService.getTopicById(id, principal.getName());
         return RestTopicMapper.INSTANCE.toTopicResponse(Topic);
     }
 
     @Version(VERSION)
     @Put("/{id}")
-    public TopicResponse update(@PathVariable String id, @Body @Valid CreateTopicRequest restCreateTopicRequest) {
-        Topic Topic = topicsService.updateTopic(id, RestTopicMapper.INSTANCE.toTopic(restCreateTopicRequest));
+    public TopicResponse update(@PathVariable String id,
+                                @Body @Valid CreateTopicRequest restCreateTopicRequest,
+                                Principal principal) {
+        Topic Topic = topicsService.updateTopic(id, RestTopicMapper.INSTANCE.toTopic(restCreateTopicRequest), principal.getName());
         return RestTopicMapper.INSTANCE.toTopicResponse(Topic);
     }
 
     @Version(VERSION)
     @Get
-    public List<TopicResponse> getAll() {
-        List<Topic> Topics = topicsService.findAll();
+    public List<TopicResponse> getAll(Principal principal) {
+        List<Topic> Topics = topicsService.findAll(principal.getName());
         return Topics.stream().map(RestTopicMapper.INSTANCE::toTopicResponse).toList();
     }
 
     @Version(VERSION)
     @Delete("/{id}")
-    public void delete(@PathVariable String id) {
-        topicsService.deleteTopicById(id);
+    public void delete(@PathVariable String id, Principal principal) {
+        topicsService.deleteTopicById(id, principal.getName());
     }
 }
