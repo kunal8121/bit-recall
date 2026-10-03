@@ -37,33 +37,40 @@ public class ContentController {
 //        if (!limiter.acquirePermission()) {
 //            throw new RuntimeException("Rate limit exceeded for user: " + userId);
 //        }
-        var content =  contentService.createContent(topicId, createContentRequest);
+        var content =  contentService.createContent(topicId, createContentRequest, principal.getName());
         return RestContentMapper.INSTANCE.toContentResponse(content);
     }
 
     @Version(VERSION)
     @Get("/{id}")
-    public ContentResponse getContentById(@PathVariable String id) {
-        var content = contentService.findById(id);
+    public ContentResponse getContentById(@PathVariable String id,
+                                          Principal principal) {
+        var content = contentService.findById(id, principal.getName());
         return RestContentMapper.INSTANCE.toContentResponse(content.get());
     }
 
     @Version(VERSION)
     @Get("/topics/{topicId}/contents")
-    public List<ContentResponse> getContentsByTopicId(@PathVariable String topicId) {
-        return contentService.findAllByTopicId(topicId);
+    public List<ContentResponse> getContentsByTopicId(@PathVariable String topicId,
+                                                      Principal principal) {
+        return contentService.findAllByTopicId(topicId, principal.getName());
     }
 
     @Version(VERSION)
     @Put("contents/{contentId}")
-    public ContentResponse updateContent( @PathVariable String contentId, @Body @Valid CreateContentRequest createContentRequest) {
-        var content = contentService.updateContent(contentId, RestContentMapper.INSTANCE.toContent(createContentRequest));
+    public ContentResponse updateContent( @PathVariable String contentId,
+                                          @Body @Valid CreateContentRequest createContentRequest,
+                                          Principal principal) {
+        var content = contentService.updateContent(contentId,
+                                                   RestContentMapper.INSTANCE.toContent(createContentRequest),
+                                                   principal.getName());
         return RestContentMapper.INSTANCE.toContentResponse(content);
     }
 
     @Version(VERSION)
     @Delete("contents/{contentId}")
-    public void deleteContent(@PathVariable String contentId) {
-         contentService.deleteContentById(contentId);
+    public void deleteContent(@PathVariable String contentId,
+                              Principal principal) {
+         contentService.deleteContentById(contentId, principal.getName());
      }
 }

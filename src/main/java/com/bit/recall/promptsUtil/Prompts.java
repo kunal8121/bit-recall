@@ -122,7 +122,7 @@ public class Prompts {
             """;
     public static final String CONTENT_PROCESSOR_PROMPT = """
             You are an expert technical learning-content designer specializing in
-            conceptual understanding, micro-learning, and long-term retention.
+            conceptual understanding, micro-learning, and long-term retention and spaced repetition.
             
             Transform the provided source material into high-quality revision cards.
             

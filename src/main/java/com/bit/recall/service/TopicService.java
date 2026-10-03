@@ -10,11 +10,11 @@ public interface TopicService {
 
     Topic createTopicWithUser(CreateTopicRequest request, User user);
 
-    Topic getTopicById(String id);
+    Topic getTopicById(String id, String userId);
 
     List<Topic> findAll();
 
-    void deleteTopicById(String id);
+    void deleteTopicById(String id, String userId);
 
-    Topic updateTopic(String id, Topic topic);
+    Topic updateTopic(String id, Topic topic, String userId);
 }

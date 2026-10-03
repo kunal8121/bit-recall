@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "contents")
-@Builder
+@Builder(toBuilder = true)
 public class Content {
     @Id
     @Column(name = "contentId")
@@ -31,7 +31,10 @@ public class Content {
     @Builder.Default
     private Status status = Status.UNPROCESSED;
 
-    private enum Status {
-        UNPROCESSED, PROCESSED, PROCESSING_FAILED
+    @Builder.Default
+    private RevisionDepth revisionDepth = RevisionDepth.COMPREHENSIVE;
+
+    public enum Status {
+        UNPROCESSED, PROCESSING, PROCESSED, PROCESSING_FAILED
     }
 }
