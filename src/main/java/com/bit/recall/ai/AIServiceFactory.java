@@ -1,5 +1,8 @@
 package com.bit.recall.ai;
 
+import com.bit.recall.exception.BitRecallErrorCode;
+import com.bit.recall.exception.BitRecallException;
+
 import io.micronaut.http.client.BlockingHttpClient;
 import jakarta.inject.Singleton;
 
@@ -23,7 +26,7 @@ public class AIServiceFactory {
     public AIService getService(AIProvider provider) {
         AIService service = serviceMap.get(provider);
         if (service == null) {
-            throw new IllegalArgumentException("Unsupported AI provider: " + provider);
+            throw new BitRecallException(BitRecallErrorCode.UNSUPPORTED_PROVIDER, "Unsupported AI provider: " + provider);
         }
         return service;
     }

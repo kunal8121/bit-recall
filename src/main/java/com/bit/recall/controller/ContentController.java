@@ -73,4 +73,10 @@ public class ContentController {
                               Principal principal) {
          contentService.deleteContentById(contentId, principal.getName());
      }
+
+    @Version(VERSION)
+    @Post("contents/{contentId}/retry")
+    public ContentResponse retryContent(@PathVariable String contentId, Principal principal) {
+        return RestContentMapper.INSTANCE.toContentResponse(contentService.retryContent(contentId, principal.getName()));
+    }
 }

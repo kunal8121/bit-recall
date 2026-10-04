@@ -4,9 +4,12 @@ package com.bit.recall.service.impl;
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.RevisionDepth;
 import com.bit.recall.domain.Topic;
+import com.bit.recall.domain.UserAiPreference;
 import com.bit.recall.domain.model.ContentCreatedEvent;
 import com.bit.recall.domain.model.ContentResponse;
 import com.bit.recall.domain.model.CreateContentRequest;
+import com.bit.recall.exception.BitRecallErrorCode;
+import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.AiConfigureRepository;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
@@ -20,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,10 +50,11 @@ public class ContentServiceImpl implements ContentService {
         //count tokens before creating content
         var tokenCount = tokenCounter.countTokens(createContentRequest.text());
         if(tokenCount > MAX_TOKEN_LIMIT) {
-            throw new IllegalArgumentException("Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT + ". Current token count: " + tokenCount);
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT + ". Current token count: " + tokenCount);
         }
 
         var revisionDepth = resolveRevisionDepth(createContentRequest.revisionDepth());
+        var userAiPreference = fetchAiProviderConfiguration(userId);
 
         Content content = Content.builder()
                 .id(UUID.randomUUID())
@@ -62,83 +65,110 @@ public class ContentServiceImpl implements ContentService {
                 .build();
         contentRepository.save(content);
         log.info("Content created with id: {} for topicId: {}", content.getId(), topicId);
-        publishEvent(content, userId);
+        publishEvent(content, userAiPreference);
         return content;
+    }
+
+    private UserAiPreference fetchAiProviderConfiguration(String userId) {
+        return aiConfigureRepository.findByUserId(UUID.fromString(userId))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.INVALID_API_KEY,
+                        "AI provider API key is not configured. Please configure it in settings."));
     }
 
     @Override
     public Optional<Content> findById(String contentId, String userId) {
         Content content = contentRepository.findById(UUID.fromString(contentId))
                 .orElseThrow(() ->
-                        new NoSuchElementException("Content not found"));
+                        new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Content not found"));
 
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
-            throw new NoSuchElementException("You don't have access to this content");
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
-        return Optional.ofNullable(contentRepository.findById(UUID.fromString(contentId)))
-                .orElseThrow(() -> new NoSuchElementException("Content not found with id: " + contentId));
+        return Optional.of(content);
     }
 
     @Override
     public List<ContentResponse> findAllByTopicId(String topicId, String userId) {
+        UUID topicUUID;
         try {
-            // Validate ownership of the topic before proceeding
-            var topic = validateOwnerShip(topicId, userId).get();
-
-            return contentRepository.findByTopicId(UUID.fromString(topicId)).stream()
-                    .map(content -> ContentResponse.builder()
-                            .id(content.getId().toString())
-                            .text(content.getText())
-                            .createdAt(content.getCreatedAt())
-                            .build())
-                    .collect(toList());
+            topicUUID = UUID.fromString(topicId);
         } catch (IllegalArgumentException e) {
-            // Invalid UUID string passed
-            log.error("Invalid topicId UUID format: {}", topicId);
-            return List.of();
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Invalid topicId UUID format", e);
         }
+
+        // Validate ownership of the topic before proceeding.
+        validateOwnerShip(topicUUID.toString(), userId);
+        return contentRepository.findByTopicId(topicUUID).stream()
+                .map(content -> ContentResponse.builder()
+                        .id(content.getId().toString())
+                        .text(content.getText())
+                        .createdAt(content.getCreatedAt())
+                        .build())
+                .collect(toList());
     }
 
     @Override
     public void deleteContentById( String contentId, String userId) {
         Content content = contentRepository.findById(UUID.fromString(contentId))
                 .orElseThrow(() ->
-                        new NoSuchElementException("Content not found"));
+                        new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Content not found"));
 
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
-            throw new NoSuchElementException("You don't have access to this content");
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
-       contentRepository.findById(UUID.fromString(contentId))
-                .ifPresentOrElse(contentRepository::delete, () -> {
-                    throw new NoSuchElementException("Content not found with id: " + contentId);
-                });
+        contentRepository.delete(content);
     }
 
     @Override
     public Content updateContent(String contentId, Content updateableContent, String userId) {
         Content content = contentRepository.findById(UUID.fromString(contentId))
-                .orElseThrow(() ->
-                        new NoSuchElementException("Content not found"));
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Content not found"));
 
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
-            throw new NoSuchElementException("You don't have access to this content");
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
-        contentRepository.findById(UUID.fromString(contentId))
-                .ifPresentOrElse(existingContent -> {
-                    existingContent.setText(updateableContent.getText());
-                    contentRepository.update(existingContent);
-                }, () -> {
-                    throw new NoSuchElementException("Content not found with id: " + contentId);
-                });
+        if (content.getStatus() == Content.Status.PROCESSING) {
+            throw new BitRecallException(BitRecallErrorCode.CONFLICT, "Content is already being processed");
+        }
+        int tokenCount = tokenCounter.countTokens(updateableContent.getText());
+        if (tokenCount > MAX_TOKEN_LIMIT) {
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT
+                    + ". Current token count: " + tokenCount);
+        }
 
-        return updateableContent;
+        RevisionDepth revisionDepth = updateableContent.getRevisionDepth() == null
+                ? content.getRevisionDepth() : updateableContent.getRevisionDepth();
+        UserAiPreference preference = fetchAiProviderConfiguration(userId);
+        content.setText(updateableContent.getText());
+        content.setRevisionDepth(revisionDepth);
+        content.setStatus(Content.Status.PROCESSING);
+        contentRepository.update(content);
+        publishEvent(content, preference);
+        return content;
+    }
+
+    @Override
+    public Content retryContent(String contentId, String userId) {
+        Content content = contentRepository.findById(UUID.fromString(contentId))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Content not found"));
+        if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
+        }
+        if (content.getStatus() != Content.Status.PROCESSING_FAILED) {
+            throw new BitRecallException(BitRecallErrorCode.CONFLICT, "Only failed content can be retried");
+        }
+        UserAiPreference preference = fetchAiProviderConfiguration(userId);
+        content.setStatus(Content.Status.PROCESSING);
+        contentRepository.update(content);
+        publishEvent(content, preference);
+        return content;
     }
 
     private Optional<Topic> validateOwnerShip(String topicID, String userId) {
         var topic = topicRepository.findById(UUID.fromString(topicID))
-                .orElseThrow(() -> new NoSuchElementException("Topic not found with id: " + topicID));
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + topicID));
         if (!topic.getUser().getId().toString().equals(userId)) {
-            throw new IllegalArgumentException("User does not have permission to access this topic.");
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "User does not have permission to access this topic.");
         }
         return Optional.of(topic);
     }
@@ -150,14 +180,11 @@ public class ContentServiceImpl implements ContentService {
         try {
             return RevisionDepth.valueOf(revisionDepth.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid revision depth: " + revisionDepth);
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Invalid revision depth: " + revisionDepth, e);
         }
     }
 
-    private void publishEvent(Content content, String userId) {
-        var userAiPreference = aiConfigureRepository.findByUserId(UUID.fromString(userId))
-                .orElseThrow(() -> new IllegalStateException("AI Provider API Key not configured. Please configure in settings."));
-
+    private void publishEvent(Content content, UserAiPreference userAiPreference) {
         ContentCreatedEvent event = ContentCreatedEvent.builder()
                 .id(content.getId().toString())
                 .topicId(content.getTopic().getId().toString())

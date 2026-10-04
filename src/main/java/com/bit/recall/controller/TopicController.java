@@ -4,6 +4,8 @@ import com.bit.recall.domain.model.CreateTopicRequest;
 import com.bit.recall.domain.model.TopicResponse;
 import com.bit.recall.domain.Topic;
 import com.bit.recall.domain.User;
+import com.bit.recall.exception.BitRecallErrorCode;
+import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.mapper.RestTopicMapper;
 import com.bit.recall.repo.UserRepository;
 import com.bit.recall.service.TopicService;
@@ -19,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @Controller("api/{version}/topics")
 @RequiredArgsConstructor
@@ -36,9 +38,9 @@ public class TopicController {
             @Body @Valid CreateTopicRequest request,
             Principal principal) {
 
-        String username = principal.getName();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("User not found with id: " + username));
+        String userId = principal.getName();
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "User not found with id: " + userId));
 
         Topic createdTopic = topicsService.createTopicWithUser(request, user);
         return RestTopicMapper.INSTANCE.toTopicResponse(createdTopic);

@@ -1,5 +1,8 @@
 package com.bit.recall.service;
 
+import com.bit.recall.exception.BitRecallErrorCode;
+import com.bit.recall.exception.BitRecallException;
+
 import io.micronaut.context.annotation.Property;
 import jakarta.inject.Singleton;
 
@@ -94,7 +97,7 @@ public class EncryptionService {
 
            return Base64.getEncoder().encodeToString(combined);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to encrypt data", e);
+            throw new BitRecallException(BitRecallErrorCode.SERVER_ERROR, "Failed to encrypt data", e);
         }
     }
 
@@ -115,7 +118,7 @@ public class EncryptionService {
             byte[] plainText = cipher.doFinal(cipherText);
             return new String(plainText, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to decrypt data", e);
+            throw new BitRecallException(BitRecallErrorCode.SERVER_ERROR, "Failed to decrypt data", e);
         }
     }
 }

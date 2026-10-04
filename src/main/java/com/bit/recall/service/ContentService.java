@@ -17,4 +17,6 @@ public interface ContentService {
     void deleteContentById(String contentId, String userId);
 
     Content updateContent(String contentId, Content Content, String userId);
+
+    Content retryContent(String contentId, String userId);
 }
