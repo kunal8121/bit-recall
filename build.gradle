@@ -104,6 +104,15 @@ tasks.named("dockerfileNative") {
     jdkVersion = "21"
 }
 
+// Integration tests need an AES key to instantiate EncryptionService, but must never
+// depend on or commit the application's real encryption secret.
+tasks.withType(Test).configureEach {
+    def testEncryptionKey = new byte[32]
+    new java.security.SecureRandom().nextBytes(testEncryptionKey)
+    def encodedTestEncryptionKey = java.util.Base64.getEncoder().encodeToString(testEncryptionKey)
+    environment("BASE64_SECRET", encodedTestEncryptionKey)
+}
+
 
 
 
