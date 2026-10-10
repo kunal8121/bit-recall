@@ -4,6 +4,8 @@ import com.bit.recall.domain.Content;
 import com.bit.recall.domain.Topic;
 import com.bit.recall.domain.User;
 import com.bit.recall.domain.model.CreateTopicRequest;
+import com.bit.recall.exception.BitRecallErrorCode;
+import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.TopicService;
@@ -15,10 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Singleton
@@ -38,7 +37,7 @@ public class TopicServiceImpl implements TopicService {
                 .user(user)
                 .build();
 
-        if (CollectionUtils.isNotEmpty(request.contents())) {
+        if (request.contents() != null) {
             ArrayList<Content> contentList = new ArrayList<>();
 
             request.contents().forEach(contentRequest -> {
@@ -59,36 +58,46 @@ public class TopicServiceImpl implements TopicService {
             return topicRepository.save(topic);
         } catch (Exception e) {
             log.error("Error saving topicId: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new BitRecallException(BitRecallErrorCode.SERVER_ERROR, "Could not save topic", e);
         }
     }
 
     @Override
-    public Topic getTopicById(String id) {
-        return topicRepository.findById(UUID.fromString(id)).orElseThrow(() -> new NoSuchElementException("Topic not found with id: " + id));
+    public Topic getTopicById(String id, String userId) {
+        return topicRepository
+                .findByIdAndUserId(UUID.fromString(id), UUID.fromString(userId))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + id));
     }
 
     @Override
-    public List<Topic> findAll() {
-        return topicRepository.findAll();
+    public List<Topic> findAll(String userId) {
+        return topicRepository.findAllByUserId(UUID.fromString(userId));
     }
 
     @Override
-    public void deleteTopicById(String id) {
-        UUID topicUuid = UUID.fromString(id);
-
-        Topic topic = topicRepository.findById(topicUuid)
-                .orElseThrow(NotFoundException::new);
+    public void deleteTopicById(String id, String userId) {
+        Topic topic = topicRepository
+                .findByIdAndUserId(UUID.fromString(id), UUID.fromString(userId))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + id));
 
         topicRepository.delete(topic);
     }
 
     @Override
-    public Topic updateTopic(String id, Topic topic) {
-        Topic existingTopic = getTopicById(id);
+    public Topic updateTopic(String id, Topic topic, String userId) {
+        Topic existingTopic = getTopicById(id, userId);
         existingTopic.setTitle(topic.getTitle());
         existingTopic.setDescription(topic.getDescription());
         return topicRepository.save(existingTopic);
+    }
+
+    private Optional<Topic> validateOwnerShip(String topicID, String userId) {
+        var topic = topicRepository.findById(UUID.fromString(topicID))
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + topicID));
+        if (!topic.getUser().getId().toString().equals(userId)) {
+            throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "User does not have permission to access this topic.");
+        }
+        return Optional.of(topic);
     }
 }
 

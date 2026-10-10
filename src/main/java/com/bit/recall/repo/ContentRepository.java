@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface ContentRepository extends JpaRepository<Content, UUID> {
 
     List<Content> findByTopicId(UUID topicId);
+
+    List<Content> findByStatus(Content.Status status);
 }

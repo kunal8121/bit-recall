@@ -17,6 +17,7 @@ public interface RestContentMapper {
 
     @Mapping(target = "id", expression = "java(UUID.randomUUID())")
     @Mapping(target = "createdAt", ignore = true)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     Content toContent(CreateContentRequest createContentRequest);
 
     @JsonIgnoreProperties(ignoreUnknown = true)
