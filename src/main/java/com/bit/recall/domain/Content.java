@@ -34,7 +34,13 @@ public class Content {
     @Builder.Default
     private RevisionDepth revisionDepth = RevisionDepth.COMPREHENSIVE;
 
-    public enum Status {
-        UNPROCESSED, PROCESSING, PROCESSED, PROCESSING_FAILED
-    }
+    @Builder.Default
+    private Integer processingAttemptCount = 0;
+
+    private UUID lastProcessingAttemptId;
+
+    private Instant lastProcessingAttemptAt;
+
+    private Instant nextAttemptAt;
+
 }

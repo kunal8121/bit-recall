@@ -1,6 +1,12 @@
 micronaut:
   application:
     name: bit-recall
+  http:
+    services:
+      openai:
+        url: ${OPENAI_API_URL:http://localhost:8080}
+        read-timeout: 30s
+        connect-timeout: 10s
   
   # Security Configuration
   security:
@@ -41,6 +47,11 @@ bit-recall:
     secret: ${BASE64_SECRET}
   content:
     max-tokens: 20000
+  processing:
+    stale-after: 600
+    orphan-after: 120
+    max-retries: 3
+
 
 resilience4j:
   ratelimiter:

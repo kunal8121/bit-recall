@@ -17,12 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.UUID;
 
-import static com.bit.recall.domain.Content.Status.PROCESSED;
+import static com.bit.recall.domain.Status.PROCESSED;
 
 @Singleton
 @RequiredArgsConstructor
 @Slf4j
-public class RecallCardPersistenceService {
+public class RecallCardService {
 
     private final RecallItemRepository recallItemRepository;
     private final ContentRepository contentRepository;
@@ -30,7 +30,7 @@ public class RecallCardPersistenceService {
     ObjectMapper mapper = new ObjectMapper();
 
     @Transactional
-    public void persist(List<RecallCardDto> recallCards, Topic topic, Content content) throws JsonProcessingException {
+    public void persist(List<RecallCardDto> recallCards, Topic topic, Content content, UUID attemptId) throws JsonProcessingException {
         // Replace cards only after generation succeeded; the transaction keeps the old set if persistence fails.
         recallItemRepository.deleteAll(recallItemRepository.findByContentId(content.getId()));
         for (RecallCardDto recallDto : recallCards) {
@@ -57,6 +57,12 @@ public class RecallCardPersistenceService {
                     recallItem.getId(), recallItem.getQuestion(), topic.getId());
         }
 
-        contentRepository.update(content.toBuilder().status(PROCESSED).build());
+        if (contentRepository.markAttemptProcessed(content.getId(), attemptId) != 1) {
+            throw new IllegalStateException("Processing attempt no longer owns content " + content.getId());
+        }
+    }
+
+    public List<RecallItem> findRecallItemsByContentId(UUID contentId) {
+        return recallItemRepository.findByContentId(contentId);
     }
 }

@@ -1,10 +1,7 @@
 package com.bit.recall.service.impl;
 
 
-import com.bit.recall.domain.Content;
-import com.bit.recall.domain.RevisionDepth;
-import com.bit.recall.domain.Topic;
-import com.bit.recall.domain.UserAiPreference;
+import com.bit.recall.domain.*;
 import com.bit.recall.domain.model.ContentCreatedEvent;
 import com.bit.recall.domain.model.ContentResponse;
 import com.bit.recall.domain.model.CreateContentRequest;
@@ -26,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.bit.recall.domain.Status.PROCESSING;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
@@ -54,7 +52,6 @@ public class ContentServiceImpl implements ContentService {
         }
 
         var revisionDepth = resolveRevisionDepth(createContentRequest.revisionDepth());
-        var userAiPreference = fetchAiProviderConfiguration(userId);
 
         Content content = Content.builder()
                 .id(UUID.randomUUID())
@@ -65,7 +62,7 @@ public class ContentServiceImpl implements ContentService {
                 .build();
         contentRepository.save(content);
         log.info("Content created with id: {} for topicId: {}", content.getId(), topicId);
-        publishEvent(content, userAiPreference);
+        publishEvent(content);
         return content;
     }
 
@@ -127,7 +124,7 @@ public class ContentServiceImpl implements ContentService {
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
             throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
-        if (content.getStatus() == Content.Status.PROCESSING) {
+        if (content.getStatus() == PROCESSING) {
             throw new BitRecallException(BitRecallErrorCode.CONFLICT, "Content is already being processed");
         }
         int tokenCount = tokenCounter.countTokens(updateableContent.getText());
@@ -138,12 +135,16 @@ public class ContentServiceImpl implements ContentService {
 
         RevisionDepth revisionDepth = updateableContent.getRevisionDepth() == null
                 ? content.getRevisionDepth() : updateableContent.getRevisionDepth();
-        UserAiPreference preference = fetchAiProviderConfiguration(userId);
+
         content.setText(updateableContent.getText());
         content.setRevisionDepth(revisionDepth);
-        content.setStatus(Content.Status.PROCESSING);
+        content.setStatus(Status.UNPROCESSED);
+        content.setProcessingAttemptCount(0);
+        content.setLastProcessingAttemptId(null);
+        content.setLastProcessingAttemptAt(null);
+        content.setNextAttemptAt(null);
         contentRepository.update(content);
-        publishEvent(content, preference);
+        publishEvent(content);
         return content;
     }
 
@@ -154,13 +155,16 @@ public class ContentServiceImpl implements ContentService {
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
             throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
-        if (content.getStatus() != Content.Status.PROCESSING_FAILED) {
+        if (content.getStatus() != Status.PROCESSING_FAILED) {
             throw new BitRecallException(BitRecallErrorCode.CONFLICT, "Only failed content can be retried");
         }
-        UserAiPreference preference = fetchAiProviderConfiguration(userId);
-        content.setStatus(Content.Status.PROCESSING);
+        content.setStatus(Status.UNPROCESSED);
+        content.setProcessingAttemptCount(0);
+        content.setLastProcessingAttemptId(null);
+        content.setLastProcessingAttemptAt(null);
+        content.setNextAttemptAt(null);
         contentRepository.update(content);
-        publishEvent(content, preference);
+        publishEvent(content);
         return content;
     }
 
@@ -184,16 +188,10 @@ public class ContentServiceImpl implements ContentService {
         }
     }
 
-    private void publishEvent(Content content, UserAiPreference userAiPreference) {
+    private void publishEvent(Content content) {
         ContentCreatedEvent event = ContentCreatedEvent.builder()
-                .id(content.getId().toString())
-                .topicId(content.getTopic().getId().toString())
+                .id(UUID.randomUUID().toString())
                 .contentId(content.getId().toString())
-                .text(content.getText())
-                .revisionDepth(content.getRevisionDepth())
-                .aiProvider(userAiPreference.getPreferredProvider())
-                .apiKey(userAiPreference.getEncryptedApiKey())
-                .createdAt(content.getCreatedAt())
                 .build();
         contentPublisher.publishEvent(event);
         log.info("Published ContentCreatedEvent for contentId: {}", content.getId());

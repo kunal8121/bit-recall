@@ -41,6 +41,7 @@ public class AiConfigureServiceImpl implements AiConfigureService {
         preferenceRepository.save(preference);
     }
 
+    @Override
     public UserAiPreference getPreferenceForUser(UUID userId) {
         return preferenceRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("AI Provider API Key not configured. Please configure in settings."));
