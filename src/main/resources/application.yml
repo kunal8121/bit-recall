@@ -1,13 +1,6 @@
 micronaut:
   application:
     name: bit-recall
-  http:
-    services:
-      openai:
-        url: ${OPENAI_API_URL:http://localhost:8080}
-        read-timeout: 30s
-        connect-timeout: 10s
-  
   # Security Configuration
   security:
     enabled: true
@@ -64,13 +57,3 @@ resilience4j:
       aiServiceRateLimiter:
         baseConfig: default
 
-openapi:
-  url: http://localhost:8080
-
-langchain4j:
-  open-ai:
-    api-key: {OPEN_AI_APIKEY}
-    streaming-chat-model:
-      model-name: gpt-4o
-      log-requests: true
-      log-responses: true

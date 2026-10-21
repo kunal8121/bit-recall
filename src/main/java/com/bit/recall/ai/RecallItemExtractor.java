@@ -4,11 +4,10 @@ import com.bit.recall.domain.model.RecallCardDto;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
-import io.micronaut.langchain4j.annotation.AiService;
 
 import java.util.List;
 
-/** Typed LangChain4j AI Service used by {@link OpenAIRecallItemGenerator}. */
+/** Typed LangChain4j extractor for the recall cards returned by content processing. */
 public interface RecallItemExtractor {
 
     @SystemMessage("{{systemPrompt}}")

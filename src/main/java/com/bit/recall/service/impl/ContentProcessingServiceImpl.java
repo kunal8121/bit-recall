@@ -2,8 +2,6 @@ package com.bit.recall.service.impl;
 
 import com.bit.recall.ai.AIService;
 import com.bit.recall.ai.AIServiceFactory;
-import com.bit.recall.ai.AIProvider;
-import com.bit.recall.ai.OpenAIRecallItemGenerator;
 import com.bit.recall.config.ContentProcessorConfig;
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.RevisionDepth;
@@ -35,7 +33,6 @@ import static com.bit.recall.promptsUtil.Prompts.CONTENT_PROCESSOR_PROMPT;
 public class ContentProcessingServiceImpl implements ContentProcessingService{
 
     private final AIServiceFactory aiServiceFactory;
-    private final OpenAIRecallItemGenerator openAIRecallItemGenerator;
     private final ContentRepository contentRepository;
     private final EncryptionService encryptionService;
     private final AiConfigureService aiConfigureService;
@@ -59,11 +56,12 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
             var content = fetchContent(event.contentId());
 
             var preference = aiConfigureService.getPreferenceForUser(content.getTopic().getUser().getId());
+            AIService aiService = aiServiceFactory.getService(preference.getPreferredProvider());
             String decryptedApiKey = encryptionService.decrypt(preference.getEncryptedApiKey());
             List<RecallCardDto> recallCardDtos = processText(
                     decryptedApiKey,
                     content.getText(),
-                    preference.getPreferredProvider(),
+                    aiService,
                     content.getRevisionDepth());
             recallCardService.persist(recallCardDtos, content.getTopic(), content, attemptId);
         } catch (RuntimeException | JsonProcessingException e) {
@@ -88,7 +86,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
         }
     }
 
-    private List<RecallCardDto> processText(String apiKey, String text, AIProvider provider, RevisionDepth revisionDepth) {
+    private List<RecallCardDto> processText(String apiKey, String text, AIService aiService, RevisionDepth revisionDepth) {
         String userPrompt = """
             Revision Depth: %s
 
@@ -96,12 +94,6 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
             %s
             """.formatted(revisionDepth.name(), text);
 
-        if (provider == AIProvider.OPENAI) {
-            return openAIRecallItemGenerator.generateRecallItems(
-                    apiKey, CONTENT_PROCESSOR_PROMPT, userPrompt);
-        }
-
-        AIService aiService = aiServiceFactory.getService(provider);
         var processedData = aiService.generateStructuredOutput(apiKey, CONTENT_PROCESSOR_PROMPT, userPrompt, RecallCardDtoWrapper.class);
         return processedData.recallCards();
     }
