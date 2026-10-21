@@ -23,7 +23,11 @@ dependencies {
     annotationProcessor("io.micronaut.validation:micronaut-validation-processor")
     annotationProcessor("io.micronaut.security:micronaut-security-annotations")
     annotationProcessor("io.micronaut:micronaut-inject-java")
+    annotationProcessor("io.micronaut.langchain4j:micronaut-langchain4j-processor")
 
+    implementation("io.micronaut.langchain4j:micronaut-langchain4j-openai")
+    implementation("io.micronaut.langchain4j:micronaut-langchain4j-core")
+    implementation("dev.langchain4j:langchain4j-open-ai")
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("io.github.resilience4j:resilience4j-ratelimiter:2.2.0")
     implementation("io.micronaut:micronaut-runtime")

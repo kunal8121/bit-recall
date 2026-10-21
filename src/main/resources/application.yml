@@ -66,3 +66,11 @@ resilience4j:
 
 openapi:
   url: http://localhost:8080
+
+langchain4j:
+  open-ai:
+    api-key: {OPEN_AI_APIKEY}
+    streaming-chat-model:
+      model-name: gpt-4o
+      log-requests: true
+      log-responses: true

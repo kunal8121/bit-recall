@@ -26,6 +26,7 @@ public class OpenAIService implements AIService {
     private static final String OPENAPI_MODEL = "gpt-4o-mini";
     private static final String SYSTEM = "system";
     private static final String USER = "user";
+    private static final String JSON_SCHEMA = "json_schema";
 
     private final OpenApiClient openApiClient;
     private final ObjectMapper objectMapper;
@@ -45,7 +46,7 @@ public class OpenAIService implements AIService {
                             OpenApiRequest.Message.builder().role(SYSTEM).content(systemPrompt).build(),
                             OpenApiRequest.Message.builder().role(USER).content(userPrompt).build()
                     ))
-                    .responseFormat(OpenApiRequest.ResponseFormat.builder().type("JSON").build())
+                    .responseFormat(OpenApiRequest.ResponseFormat.builder().type(JSON_SCHEMA).build())
                     .build();
             var openApiResponse = openApiClient.generateCompletion(BEARER_PREFIX + apiKey, openApiRequest);
             var jsonContent = extractJsonContent(openApiResponse);

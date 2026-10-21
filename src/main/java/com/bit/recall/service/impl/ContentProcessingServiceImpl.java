@@ -2,6 +2,9 @@ package com.bit.recall.service.impl;
 
 import com.bit.recall.ai.AIService;
 import com.bit.recall.ai.AIServiceFactory;
+import com.bit.recall.ai.AIProvider;
+import com.bit.recall.ai.OpenAIRecallItemGenerator;
+import com.bit.recall.config.ContentProcessorConfig;
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.RevisionDepth;
 import com.bit.recall.domain.model.RecallCardDto;
@@ -14,7 +17,6 @@ import com.bit.recall.service.ContentProcessingService;
 import com.bit.recall.service.AiConfigureService;
 import com.bit.recall.service.EncryptionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.micronaut.context.annotation.Value;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
 import jakarta.inject.Singleton;
@@ -33,16 +35,12 @@ import static com.bit.recall.promptsUtil.Prompts.CONTENT_PROCESSOR_PROMPT;
 public class ContentProcessingServiceImpl implements ContentProcessingService{
 
     private final AIServiceFactory aiServiceFactory;
+    private final OpenAIRecallItemGenerator openAIRecallItemGenerator;
     private final ContentRepository contentRepository;
     private final EncryptionService encryptionService;
     private final AiConfigureService aiConfigureService;
     private final RecallCardService recallCardService;
-
-    @Value("${bit-recall.processing.max-retries:3}")
-    private int maxRetries;
-
-    @Value("${bit-recall.processing.stale-after-seconds:600}")
-    private int staleAfterSeconds;
+    private final ContentProcessorConfig config;
 
     @Override
     @EventListener
@@ -52,8 +50,8 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
 
         UUID contentUuid = UUID.fromString(event.contentId());
         UUID attemptId = UUID.randomUUID();
-        Instant staleBefore = Instant.now().minusSeconds(staleAfterSeconds);
-        if (contentRepository.claimForProcessing(contentUuid, attemptId, maxRetries, staleBefore) != 1) {
+        Instant staleBefore = Instant.now().minusSeconds(config.staleAfter());
+        if (contentRepository.claimForProcessing(contentUuid, attemptId, config.maxRetries(), staleBefore) != 1) {
             log.info("Skipping content {} because it is already processed, claimed, or out of retries", event.contentId());
             return;
         }
@@ -61,9 +59,12 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
             var content = fetchContent(event.contentId());
 
             var preference = aiConfigureService.getPreferenceForUser(content.getTopic().getUser().getId());
-            AIService aiService = aiServiceFactory.getService(preference.getPreferredProvider());
             String decryptedApiKey = encryptionService.decrypt(preference.getEncryptedApiKey());
-            List<RecallCardDto> recallCardDtos = processText(decryptedApiKey, content.getText(), aiService, content.getRevisionDepth());
+            List<RecallCardDto> recallCardDtos = processText(
+                    decryptedApiKey,
+                    content.getText(),
+                    preference.getPreferredProvider(),
+                    content.getRevisionDepth());
             recallCardService.persist(recallCardDtos, content.getTopic(), content, attemptId);
         } catch (RuntimeException | JsonProcessingException e) {
             log.error("Content processing failed for content ID: {}", event.contentId(), e);
@@ -72,21 +73,6 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
                     "Error while processing content ID: " + event.contentId(), e);
         }
     }
-
-//    /** On restart, an in-memory async event may have been lost. Convert abandoned work to retryable failure. */
-//    @EventListener
-//    public void recoverInterruptedProcessing(StartupEvent event) {
-//        List<Content> interrupted = contentRepository.findByStatus(PROCESSING, null, null);
-//        for (Content content : interrupted) {
-//            try {
-//                recallCardService.findRecallItemsByContentId(content.getId());
-//                contentRepository.update(content.toBuilder().status(PROCESSING_FAILED).build());
-//                log.warn("Marked interrupted content {} as PROCESSING_FAILED during startup recovery", content.getId());
-//            } catch (RuntimeException e) {
-//                log.error("Could not recover interrupted content {} during startup", content.getId(), e);
-//            }
-//        }
-//    }
 
     private void persistFailureStatus(UUID contentId, UUID attemptId, Exception processingError) {
         try {
@@ -102,13 +88,20 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
         }
     }
 
-    private List<RecallCardDto> processText(String apiKey, String text, AIService aiService, RevisionDepth revisionDepth) {
+    private List<RecallCardDto> processText(String apiKey, String text, AIProvider provider, RevisionDepth revisionDepth) {
         String userPrompt = """
             Revision Depth: %s
 
             SOURCE MATERIAL:
             %s
             """.formatted(revisionDepth.name(), text);
+
+        if (provider == AIProvider.OPENAI) {
+            return openAIRecallItemGenerator.generateRecallItems(
+                    apiKey, CONTENT_PROCESSOR_PROMPT, userPrompt);
+        }
+
+        AIService aiService = aiServiceFactory.getService(provider);
         var processedData = aiService.generateStructuredOutput(apiKey, CONTENT_PROCESSOR_PROMPT, userPrompt, RecallCardDtoWrapper.class);
         return processedData.recallCards();
     }
