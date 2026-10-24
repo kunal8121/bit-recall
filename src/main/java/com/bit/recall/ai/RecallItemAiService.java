@@ -7,9 +7,8 @@ import dev.langchain4j.service.V;
 
 import java.util.List;
 
-/** Typed LangChain4j extractor for the recall cards returned by content processing. */
-public interface RecallItemExtractor {
-
+/** Typed LangChain4j AI service for extracting recall cards. */
+public interface RecallItemAiService {
     @SystemMessage("{{systemPrompt}}")
     @UserMessage("{{userPrompt}}")
     List<RecallCardDto> extractRecallItems(@V("systemPrompt") String systemPrompt,

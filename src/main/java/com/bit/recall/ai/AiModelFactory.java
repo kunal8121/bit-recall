@@ -11,18 +11,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
-public class AIServiceFactory {
+public class AiModelFactory {
 
-    private final Map<AIProvider, AIService> serviceMap;
+    private final Map<AIProvider, AiModel> aiModelProvider;
 
-    // Micronaut automatically injects all beans implementing AIService interface
-    public AIServiceFactory(List<AIService> aiServices) {
-        this.serviceMap = aiServices.stream()
-                .collect(Collectors.toMap(AIService::getProvider, Function.identity()));
+    // Micronaut injects all provider adapters implementing AiModel.
+    public AiModelFactory(List<AiModel> aiModels) {
+        this.aiModelProvider = aiModels.stream()
+                .collect(Collectors.toMap(AiModel::getProvider, Function.identity()));
     }
 
-    public AIService getService(AIProvider provider) {
-        AIService service = serviceMap.get(provider);
+    public AiModel getModel(AIProvider provider) {
+        AiModel service = aiModelProvider.get(provider);
         if (service == null) {
             throw new BitRecallException(BitRecallErrorCode.UNSUPPORTED_PROVIDER, "Unsupported AI provider: " + provider);
         }

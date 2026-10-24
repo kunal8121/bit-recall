@@ -187,19 +187,21 @@ public class Prompts {
             - If the source is ambiguous or incomplete, do not guess.
             
             OUTPUT:
-            Return ONLY a valid JSON array.
+            Return ONLY a valid JSON array of recall cards.
             
             Each card must contain exactly these fields:
             
-            {
-              "title": "Short descriptive title",
-              "type": "definition | rule | mechanism | pattern | comparison | code | algorithm | formula | example | other",
-              "explanation": "Self-contained explanation.",
-              "example": "Relevant example or null.",
-              "code": "Relevant code or null.",
-              "pattern": "Relevant reusable pattern or null.",
-              "recall": "Useful active-recall question or null."
-            }
+            [
+                {
+                  "title": "Short descriptive title",
+                  "type": "definition | rule | mechanism | pattern | comparison | code | algorithm | formula | example | other",
+                  "explanation": "Self-contained explanation.",
+                  "example": "Relevant example or null.",
+                  "code": "Relevant code or null.",
+                  "pattern": "Relevant reusable pattern or null.",
+                  "recall": "Useful active-recall question or null."
+                }
+            ]
             
             FINAL CHECK:
             Ensure the cards are conceptually complete, non-redundant, faithful to the

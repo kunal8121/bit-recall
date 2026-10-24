@@ -1,13 +1,14 @@
 package com.bit.recall.service.impl;
 
-import com.bit.recall.ai.AIService;
-import com.bit.recall.ai.AIServiceFactory;
+import com.bit.recall.ai.AiModel;
+import com.bit.recall.ai.AiModelFactory;
+import com.bit.recall.domain.UserAiPreference;
+import com.bit.recall.service.RecallItemGenerator;
 import com.bit.recall.config.ContentProcessorConfig;
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.RevisionDepth;
 import com.bit.recall.domain.model.RecallCardDto;
 import com.bit.recall.domain.model.ContentCreatedEvent;
-import com.bit.recall.domain.model.RecallCardDtoWrapper;
 import com.bit.recall.exception.BitRecallErrorCode;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
@@ -32,7 +33,8 @@ import static com.bit.recall.promptsUtil.Prompts.CONTENT_PROCESSOR_PROMPT;
 @RequiredArgsConstructor
 public class ContentProcessingServiceImpl implements ContentProcessingService{
 
-    private final AIServiceFactory aiServiceFactory;
+    private final AiModelFactory aiModelFactory;
+    private final RecallItemGenerator recallItemGenerator;
     private final ContentRepository contentRepository;
     private final EncryptionService encryptionService;
     private final AiConfigureService aiConfigureService;
@@ -55,14 +57,14 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
         try {
             var content = fetchContent(event.contentId());
 
-            var preference = aiConfigureService.getPreferenceForUser(content.getTopic().getUser().getId());
-            AIService aiService = aiServiceFactory.getService(preference.getPreferredProvider());
+            UserAiPreference preference = aiConfigureService.getPreferenceForUser(content.getTopic().getUser().getId());
+            AiModel aiModel = aiModelFactory.getModel(preference.getPreferredProvider());
             String decryptedApiKey = encryptionService.decrypt(preference.getEncryptedApiKey());
-            List<RecallCardDto> recallCardDtos = processText(
-                    decryptedApiKey,
-                    content.getText(),
-                    aiService,
-                    content.getRevisionDepth());
+
+            List<RecallCardDto> recallCardDtos = processText(aiModel,
+                                                             decryptedApiKey,
+                                                             content.getText(),
+                                                             content.getRevisionDepth());
             recallCardService.persist(recallCardDtos, content.getTopic(), content, attemptId);
         } catch (RuntimeException | JsonProcessingException e) {
             log.error("Content processing failed for content ID: {}", event.contentId(), e);
@@ -86,7 +88,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
         }
     }
 
-    private List<RecallCardDto> processText(String apiKey, String text, AIService aiService, RevisionDepth revisionDepth) {
+    private List<RecallCardDto> processText(AiModel aiModel, String apiKey, String text, RevisionDepth revisionDepth) {
         String userPrompt = """
             Revision Depth: %s
 
@@ -94,8 +96,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
             %s
             """.formatted(revisionDepth.name(), text);
 
-        var processedData = aiService.generateStructuredOutput(apiKey, CONTENT_PROCESSOR_PROMPT, userPrompt, RecallCardDtoWrapper.class);
-        return processedData.recallCards();
+        return recallItemGenerator.generateRecallItems(aiModel.getChatModel(apiKey), CONTENT_PROCESSOR_PROMPT, userPrompt);
     }
 
     private Content fetchContent(String contentId) {
