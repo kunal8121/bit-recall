@@ -6,5 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 
 @Serdeable
 public record CreateContentRequest(
-        @JsonProperty("content_text") @NotBlank String text) {
+        @JsonProperty("content_text") @NotBlank String text,
+        @JsonProperty("revision_depth") String revisionDepth) {
+
 }

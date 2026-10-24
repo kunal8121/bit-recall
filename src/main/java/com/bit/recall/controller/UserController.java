@@ -9,6 +9,8 @@ import com.bit.recall.service.impl.UserServiceImpl;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.validation.Valid;
@@ -17,7 +19,8 @@ import lombok.RequiredArgsConstructor;
 
 @Controller("/users")
 @RequiredArgsConstructor
-@Secured(SecurityRule.IS_ANONYMOUS) // Allow unauthenticated access for signup
+@Secured(SecurityRule.IS_ANONYMOUS)
+@ExecuteOn(TaskExecutors.IO)// Allow unauthenticated access for signup
 public class UserController {
 
     private final UserServiceImpl userServiceImpl;

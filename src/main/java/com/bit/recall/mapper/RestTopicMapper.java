@@ -17,6 +17,7 @@ public interface RestTopicMapper {
 
     @Mapping(target = "id", expression = "java(UUID.randomUUID())")
     @Mapping(target = "user", ignore = true)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     Topic toTopic(CreateTopicRequest spec);
 
     @JsonIgnoreProperties(ignoreUnknown = true)

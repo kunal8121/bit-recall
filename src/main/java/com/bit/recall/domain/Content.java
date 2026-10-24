@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "contents")
-@Builder
+@Builder(toBuilder = true)
 public class Content {
     @Id
     @Column(name = "contentId")
@@ -27,4 +27,20 @@ public class Content {
 
     @DateCreated
     private Instant createdAt;
+
+    @Builder.Default
+    private Status status = Status.UNPROCESSED;
+
+    @Builder.Default
+    private RevisionDepth revisionDepth = RevisionDepth.COMPREHENSIVE;
+
+    @Builder.Default
+    private Integer processingAttemptCount = 0;
+
+    private UUID lastProcessingAttemptId;
+
+    private Instant lastProcessingAttemptAt;
+
+    private Instant nextAttemptAt;
+
 }

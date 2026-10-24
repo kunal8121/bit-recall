@@ -8,13 +8,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ContentService {
-    Content createContent(String topicId, CreateContentRequest createContentRequest);
+    Content createContent(String topicId, CreateContentRequest createContentRequest, String userId);
 
-    Optional<Content> findById(String contentId);
+    Optional<Content> findById(String contentId, String userId);
 
-    List<ContentResponse> findAllByTopicId(String topicId);
+    List<ContentResponse> findAllByTopicId(String topicId, String userId);
 
-    void deleteContentById(String contentId);
+    void deleteContentById(String contentId, String userId);
 
-    Content updateContent(String contentId, Content Content);
+    Content updateContent(String contentId, Content Content, String userId);
+
+    Content retryContent(String contentId, String userId);
 }

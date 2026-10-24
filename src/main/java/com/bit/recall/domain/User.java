@@ -28,6 +28,7 @@ public class User {
     )
     private String email;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Topic> topics = new ArrayList<>();
 }
