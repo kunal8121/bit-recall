@@ -8,7 +8,7 @@ import java.util.List;
 
 @Serdeable
 public record TopicResponse(
-        @JsonProperty("topicId-id") String id,
+        @JsonProperty("topicId_id") String id,
         @JsonProperty("title") String title,
         @JsonProperty("description") String description,
         @JsonProperty("created_at") Instant createdAt) {}

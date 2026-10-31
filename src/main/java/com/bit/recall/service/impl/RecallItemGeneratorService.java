@@ -22,14 +22,14 @@ public class RecallItemGeneratorService implements RecallItemGenerator {
             List<RecallCardDto> items = extractor.extractRecallItems(systemPrompt, userPrompt);
             if (items == null) {
                 throw new BitRecallException(BitRecallErrorCode.STRUCTURED_OUTPUT_ERROR,
-                        "LangChain4j returned no recall items");
+                        "Returned no recall items");
             }
             return items;
         } catch (BitRecallException e) {
             throw e;
         } catch (RuntimeException e) {
             throw new BitRecallException(BitRecallErrorCode.AI_SERVICE_ERROR,
-                    "LangChain4j recall generation request failed", e);
+                    "Recall generation request failed", e);
         }
     }
 }

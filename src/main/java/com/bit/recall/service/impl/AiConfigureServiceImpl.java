@@ -5,12 +5,10 @@ import com.bit.recall.domain.UserAiPreference;
 import com.bit.recall.domain.model.ConfigureAiRequest;
 import com.bit.recall.repo.AiConfigureRepository;
 import com.bit.recall.service.AiConfigureService;
-import com.bit.recall.service.EncryptionService;
 import jakarta.inject.Singleton;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Singleton
