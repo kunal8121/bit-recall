@@ -16,6 +16,7 @@ import com.bit.recall.repo.RecallItemRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -77,15 +78,12 @@ public class RecallCardsService {
                 .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND,
                         "Topic not found with id: " + topicId));
 
-        CursorData cursorData = cursor == null || cursor.isBlank()
-                ? null
-                : CursorData.decodeCursor(cursor);
-        List<RecallItem> recallItems = recallItemRepository.findByTopicId(
-                topicId,
-                userId,
-                pageSize + 1,
-                cursorData == null ? null : cursorData.lastCreatedAt(),
-                cursorData == null ? null : cursorData.entityId());
+        CursorData cursorData = StringUtils.isEmpty(cursor) ? null : CursorData.decodeCursor(cursor);
+        List<RecallItem> recallItems = recallItemRepository.findByTopicId(topicId,
+                                                                          userId,
+                                                                 pageSize + 1,
+                                                                          cursorData == null ? null : cursorData.lastCreatedAt(),
+                                                                          cursorData == null ? null : cursorData.entityId());
 
         boolean hasNextPage = recallItems.size() > pageSize;
         if (hasNextPage) {

@@ -13,10 +13,7 @@ public interface TopicRepository extends JpaRepository<Topic, UUID> {
 
     Topic findByTitle(String title);
 
-    Optional<Topic> findByIdAndUserId(
-            UUID topicId,
-            UUID userId
-    );
+    Optional<Topic> findByIdAndUserId(UUID topicId, UUID userId);
 
     List<Topic> findAllByUserId(UUID userId);
 }
