@@ -14,7 +14,6 @@ import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.service.ContentProcessingService;
 import com.bit.recall.service.AiConfigureService;
-import com.bit.recall.service.EncryptionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
@@ -38,7 +37,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
     private final ContentRepository contentRepository;
     private final EncryptionService encryptionService;
     private final AiConfigureService aiConfigureService;
-    private final RecallCardService recallCardService;
+    private final RecallCardsService recallCardsService;
     private final ContentProcessorConfig config;
 
     @Override
@@ -65,7 +64,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
                                                              decryptedApiKey,
                                                              content.getText(),
                                                              content.getRevisionDepth());
-            recallCardService.persist(recallCardDtos, content.getTopic(), content, attemptId);
+            recallCardsService.persist(recallCardDtos, content.getTopic(), content, attemptId);
         } catch (RuntimeException | JsonProcessingException e) {
             log.error("Content processing failed for content ID: {}", event.contentId(), e);
             persistFailureStatus(contentUuid, attemptId, e);

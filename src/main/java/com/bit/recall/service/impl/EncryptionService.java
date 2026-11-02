@@ -1,10 +1,9 @@
-package com.bit.recall.service;
+package com.bit.recall.service.impl;
 
 import com.bit.recall.exception.BitRecallErrorCode;
 import com.bit.recall.exception.BitRecallException;
 
 import io.micronaut.context.annotation.Property;
-import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 
 import javax.crypto.Cipher;
