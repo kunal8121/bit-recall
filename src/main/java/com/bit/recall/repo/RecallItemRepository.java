@@ -15,19 +15,21 @@ public interface RecallItemRepository extends JpaRepository<RecallItem, UUID> {
     List<RecallItem> findByContentId(UUID contentId);
 
     @Query(nativeQuery = true, value = """
-            SELECT * FROM recall_items ri
-            WHERE ri.topicId = :topicId
-            AND ri.topicId IN
-            (SELECT t.topicId FROM topics t WHERE t.userId = :userId)
-            AND (:lastEvaluatedCursor IS NULL
-                 OR ri.createdAt < :lastEvaluatedCursor
-                 OR (ri.createdAt = :lastEvaluatedCursor AND ri.id < :lastEvaluatedId))
-            ORDER BY ri.createdAt DESC, ri.id DESC
-            LIMIT :pageSize
+            SELECT ri.*
+            FROM recall_items ri
+            JOIN topics t ON t.topic_id = ri.topic_id
+            WHERE ri.topic_id = :topicId
+              AND t.user_id = :userId
+              AND (
+                  :lastCreatedAt IS NULL
+                  OR (ri.created_at, ri.id) < (:lastCreatedAt, :lastId)
+              )
+            ORDER BY ri.created_at DESC, ri.id DESC
+            LIMIT :pageSize;
             """)
     List<RecallItem> findByTopicId(UUID topicId,
                                    UUID userId,
                                    int pageSize,
-                                   Instant lastEvaluatedCursor,
-                                   UUID lastEvaluatedId);
+                                   Instant lastCreatedAt,
+                                   UUID lastId);
 }
