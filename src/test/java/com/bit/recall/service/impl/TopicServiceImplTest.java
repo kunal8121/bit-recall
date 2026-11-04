@@ -71,4 +71,21 @@ class TopicServiceImplTest {
         assertEquals("New description", updated.getDescription());
         verify(topicRepository).findAllByUserId(userId);
     }
+
+    @Test
+    void doesNotUpdateOrDeleteTopicWhenOwnerScopedLookupFails() {
+        UUID topicId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        when(topicRepository.findByIdAndUserId(topicId, otherUserId)).thenReturn(Optional.empty());
+        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
+
+        assertThrows(BitRecallException.class, () -> service.updateTopic(topicId.toString(),
+                Topic.builder().title("Changed by another user").build(), otherUserId.toString()));
+        assertThrows(BitRecallException.class,
+                () -> service.deleteTopicById(topicId.toString(), otherUserId.toString()));
+
+        verify(topicRepository, never()).save(any(Topic.class));
+        verify(topicRepository, never()).delete(any(Topic.class));
+        verify(topicRepository, times(2)).findByIdAndUserId(topicId, otherUserId);
+    }
 }
