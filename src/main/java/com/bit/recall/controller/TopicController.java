@@ -34,10 +34,7 @@ public class TopicController {
 
     @Version(VERSION)
     @Post
-    public TopicResponse createForAuthenticatedUser(
-            @Body @Valid CreateTopicRequest request,
-            Principal principal) {
-
+    public TopicResponse createForAuthenticatedUser(@Body @Valid CreateTopicRequest request, Principal principal) {
         String userId = principal.getName();
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "User not found with id: " + userId));

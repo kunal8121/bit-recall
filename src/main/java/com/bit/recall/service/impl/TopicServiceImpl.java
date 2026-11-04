@@ -37,23 +37,6 @@ public class TopicServiceImpl implements TopicService {
                 .user(user)
                 .build();
 
-        if (request.contents() != null) {
-            ArrayList<Content> contentList = new ArrayList<>();
-
-            request.contents().forEach(contentRequest -> {
-                Content content = Content.builder()
-                        .id(UUID.randomUUID())
-                        .text(contentRequest.text ())
-                        .topic(topic)
-                        .createdAt(Instant.now())
-                        .build();
-
-                contentRepository.save(content);
-                contentList.add(content);
-            });
-
-            topic.setContents(contentList);
-        }
         try {
             return topicRepository.save(topic);
         } catch (Exception e) {

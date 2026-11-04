@@ -1,9 +1,7 @@
 package com.bit.recall.service.impl;
 
-import com.bit.recall.domain.Content;
 import com.bit.recall.domain.Topic;
 import com.bit.recall.domain.User;
-import com.bit.recall.domain.model.CreateContentRequest;
 import com.bit.recall.domain.model.CreateTopicRequest;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
@@ -13,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,19 +24,16 @@ class TopicServiceImplTest {
     @Mock ContentRepository contentRepository;
 
     @Test
-    void createsTopicAndPersistsItsContents() {
+    void createsTopicForUser() {
         when(topicRepository.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
         User user = User.builder().id(UUID.randomUUID()).build();
         TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
 
-        Topic topic = service.createTopicWithUser(new CreateTopicRequest("Math",
-                List.of(new CreateContentRequest("Notes", null)), "desc"), user);
+        Topic topic = service.createTopicWithUser(new CreateTopicRequest("Math", "desc"), user);
 
         assertEquals("Math", topic.getTitle());
         assertEquals("desc", topic.getDescription());
         assertSame(user, topic.getUser());
-        assertEquals("Notes", topic.getContents().getFirst().getText());
-        verify(contentRepository).save(any(Content.class));
         verify(topicRepository).save(topic);
     }
 

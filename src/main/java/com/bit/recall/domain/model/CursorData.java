@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public record CursorData(Instant lastCreatedAt, UUID entityId) {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
     public static String encodeCursor(CursorData cursorData) {
         try {
