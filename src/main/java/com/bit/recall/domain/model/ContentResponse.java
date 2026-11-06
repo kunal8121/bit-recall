@@ -10,4 +10,5 @@ import java.time.Instant;
 public record ContentResponse(
         String id,
         String text,
+        StatusDto status,
         Instant createdAt) {}
