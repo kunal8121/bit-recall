@@ -29,7 +29,7 @@ class ContentProcessingRetryServiceTest {
         when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null))
                 .thenReturn(List.of(failedContent));
         when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of());
-        when(contentRepository.findByStatus(Status.UNPROCESSED, 3, null)).thenReturn(List.of());
+        when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of());
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
 
@@ -43,7 +43,7 @@ class ContentProcessingRetryServiceTest {
         Content staleContent = Content.builder().id(UUID.randomUUID()).build();
         when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null)).thenReturn(List.of());
         when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of(staleContent));
-        when(contentRepository.findByStatus(Status.UNPROCESSED, 3, null)).thenReturn(List.of());
+        when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of());
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
 
@@ -57,7 +57,7 @@ class ContentProcessingRetryServiceTest {
         Content unprocessedContent = Content.builder().id(UUID.randomUUID()).build();
         when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null)).thenReturn(List.of());
         when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of());
-        when(contentRepository.findByStatus(Status.UNPROCESSED, 3, null)).thenReturn(List.of(unprocessedContent));
+        when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of(unprocessedContent));
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
 
@@ -69,6 +69,7 @@ class ContentProcessingRetryServiceTest {
     @Test
     void doesNothingWhenNoContentNeedsRetry() {
         when(contentRepository.findByStatus(any(), any(), any())).thenReturn(List.of());
+        when(contentRepository.findOrphanedUnprocessedItems(any(), anyInt())).thenReturn(List.of());
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(null, null, 2), contentProcessingService);
 

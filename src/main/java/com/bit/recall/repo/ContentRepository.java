@@ -48,6 +48,16 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
 
     @Query(nativeQuery = true, value = """
             SELECT * FROM contents c
+            WHERE c.status = 'UNPROCESSED'
+              AND (c.processing_attempt_count < :maxRetries OR :maxRetries IS NULL)
+              AND COALESCE(c.process_requested_at, c.created_at)
+                    <= NOW() - (:orphanAfter * INTERVAL '1 second')
+            ORDER BY COALESCE(c.process_requested_at, c.created_at) ASC
+            """)
+    List<Content> findOrphanedUnprocessedItems(@Nullable Integer maxRetries, int orphanAfter);
+
+    @Query(nativeQuery = true, value = """
+            SELECT * FROM contents c
             WHERE c.status = :status
               AND (c.processing_attempt_count < :maxRetries OR :maxRetries IS NULL)
               AND (

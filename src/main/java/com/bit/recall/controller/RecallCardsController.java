@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import java.security.Principal;
 import java.util.UUID;
 
-@Controller("/recall-cards")
+@Controller("/api/{version}/recall-cards")
 @ExecuteOn(TaskExecutors.IO)
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @RequiredArgsConstructor
