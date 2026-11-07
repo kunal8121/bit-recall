@@ -8,5 +8,4 @@ import java.util.List;
 
 @Serdeable
 public record CreateTopicRequest(@NotBlank String title,
-                                 @JsonProperty("topic_content") List<CreateContentRequest> contents,
                                  @JsonProperty("description") String description ) {}

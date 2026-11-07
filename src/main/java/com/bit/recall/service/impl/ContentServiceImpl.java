@@ -53,11 +53,13 @@ public class ContentServiceImpl implements ContentService {
 
         var revisionDepth = resolveRevisionDepth(createContentRequest.revisionDepth());
 
+        Instant processRequestedAt = Instant.now();
         Content content = Content.builder()
                 .id(UUID.randomUUID())
                 .text(createContentRequest.text())
                 .topic(topic)
-                .createdAt(Instant.now())
+                .createdAt(processRequestedAt)
+                .processRequestedAt(processRequestedAt)
                 .revisionDepth(revisionDepth)
                 .build();
         contentRepository.save(content);
@@ -143,6 +145,7 @@ public class ContentServiceImpl implements ContentService {
         content.setLastProcessingAttemptId(null);
         content.setLastProcessingAttemptAt(null);
         content.setNextAttemptAt(null);
+        content.setProcessRequestedAt(Instant.now());
         contentRepository.update(content);
         publishEvent(content);
         return content;
@@ -163,6 +166,7 @@ public class ContentServiceImpl implements ContentService {
         content.setLastProcessingAttemptId(null);
         content.setLastProcessingAttemptAt(null);
         content.setNextAttemptAt(null);
+        content.setProcessRequestedAt(Instant.now());
         contentRepository.update(content);
         publishEvent(content);
         return content;

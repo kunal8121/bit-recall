@@ -24,12 +24,15 @@ public class ContentProcessingRetryService {
     private final ContentProcessorConfig config;
     private final ContentProcessingService contentProcessingService;
 
-    @Scheduled(fixedDelay = "10m")
+    @Scheduled(fixedDelay = "1m")
     public void retryFailedOrUnprocessedItems() {
         int staleSeconds = config.staleAfter() == null ? 600 : config.staleAfter();
+        int orphanAfterSeconds = config.orphanAfter() == null ? 120 : config.orphanAfter();
+
+        //Fetch items for retry based on the following criteria:
         var failedContents = contentRepository.findByStatus(PROCESSING_FAILED, config.maxRetries(), null);
         var staleContents = contentRepository.findByStatus(PROCESSING, config.maxRetries(), staleSeconds);
-        var orphanedContents = contentRepository.findByStatus(UNPROCESSED, config.maxRetries(), null);
+        var orphanedContents = contentRepository.findOrphanedUnprocessedItems(config.maxRetries(), orphanAfterSeconds);
 
         List<Content> contentsToRetry = new ArrayList<>();
 

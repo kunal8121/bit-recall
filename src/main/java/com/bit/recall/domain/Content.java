@@ -43,4 +43,7 @@ public class Content {
 
     private Instant nextAttemptAt;
 
+    @Column(name = "process_requested_at")
+    private Instant processRequestedAt;
+
 }

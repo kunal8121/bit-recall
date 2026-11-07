@@ -14,6 +14,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity(name = "recall_items")
+@Table(
+        name = "recall_items",
+        indexes = {
+                @Index(name = "idx_recall_items_crated_at", columnList = "id, created_at, topic_id")
+        }
+)
 @Builder
 public class RecallItem {
 
