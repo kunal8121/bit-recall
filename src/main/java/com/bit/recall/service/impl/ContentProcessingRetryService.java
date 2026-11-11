@@ -6,6 +6,7 @@ import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.service.ContentProcessingService;
 import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.inject.Singleton;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
@@ -25,13 +26,14 @@ public class ContentProcessingRetryService {
     private final ContentProcessingService contentProcessingService;
 
     @Scheduled(fixedDelay = "1m")
+    @Transactional
     public void retryFailedOrUnprocessedItems() {
         int staleSeconds = config.staleAfter() == null ? 600 : config.staleAfter();
         int orphanAfterSeconds = config.orphanAfter() == null ? 120 : config.orphanAfter();
 
         //Fetch items for retry based on the following criteria:
-        var failedContents = contentRepository.findByStatus(PROCESSING_FAILED, config.maxRetries(), null);
-        var staleContents = contentRepository.findByStatus(PROCESSING, config.maxRetries(), staleSeconds);
+        var failedContents = contentRepository.findByStatus(PROCESSING_FAILED.name(), config.maxRetries(), null);
+        var staleContents = contentRepository.findByStatus(PROCESSING.name(), config.maxRetries(), staleSeconds);
         var orphanedContents = contentRepository.findOrphanedUnprocessedItems(config.maxRetries(), orphanAfterSeconds);
 
         List<Content> contentsToRetry = new ArrayList<>();
@@ -45,6 +47,8 @@ public class ContentProcessingRetryService {
                 contentProcessingService.processContent(ContentCreatedEvent.builder()
                         .id(UUID.randomUUID().toString())
                         .contentId(content.getId().toString())
+                        .topicId(content.getTopic().getId().toString())
+                        .userId(content.getTopic().getUser().getId().toString())
                         .build());
             });
         }

@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.time.Instant;
 
@@ -56,7 +57,9 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
         try {
             var content = fetchContent(event.contentId());
 
-            UserAiPreference preference = aiConfigureService.getPreferenceForUser(content.getTopic().getUser().getId());
+            UUID userId = UUID.fromString(event.userId());
+            UserAiPreference preference = Optional.ofNullable(aiConfigureService.getPreferenceForUser(userId))
+                    .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "AI preference not found for user ID: " + userId));
             AiModel aiModel = aiModelFactory.getModel(preference.getPreferredProvider());
             String decryptedApiKey = encryptionService.decrypt(preference.getEncryptedApiKey());
 
@@ -64,7 +67,7 @@ public class ContentProcessingServiceImpl implements ContentProcessingService{
                                                              decryptedApiKey,
                                                              content.getText(),
                                                              content.getRevisionDepth());
-            recallCardsService.persist(recallCardDtos, content.getTopic(), content, attemptId);
+            recallCardsService.persist(recallCardDtos, UUID.fromString(event.topicId()), contentUuid, attemptId);
         } catch (RuntimeException | JsonProcessingException e) {
             log.error("Content processing failed for content ID: {}", event.contentId(), e);
             persistFailureStatus(contentUuid, attemptId, e);
