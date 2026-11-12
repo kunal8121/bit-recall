@@ -47,8 +47,13 @@ class UserJourneyE2ETest implements TestPropertyProvider {
             try {
                 POSTGRES.start();
             } catch (RuntimeException startupFailure) {
+                Throwable rootCause = startupFailure;
+                while (rootCause.getCause() != null) {
+                    rootCause = rootCause.getCause();
+                }
                 throw new IllegalStateException(
-                        "Could not start the PostgreSQL Testcontainer. Verify that the CI Docker daemon is available and can pull postgres:16-alpine.",
+                        "Could not start the PostgreSQL Testcontainer. Verify Docker access and postgres:16-alpine image availability. Root cause: "
+                                + rootCause,
                         startupFailure);
             }
         }

@@ -23,10 +23,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
 
-    - name: Set up Docker for Testcontainers
-      uses: docker/setup-docker-action@v5
-
-    - name: Verify Docker daemon
+    - name: Verify Docker daemon for Testcontainers
       run: docker info
 
     - name: Build with Gradle Wrapper
