@@ -10,6 +10,7 @@ import com.bit.recall.domain.model.ContentCreatedEvent;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.AiConfigureRepository;
 import com.bit.recall.repo.ContentRepository;
+import com.bit.recall.repo.RecallItemRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.utils.TokenCounter;
 import io.micronaut.context.event.ApplicationEventPublisher;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.*;
 class ContentServiceOwnershipTest {
     @Mock TopicRepository topicRepository;
     @Mock ContentRepository contentRepository;
+    @Mock RecallItemRepository recallItemRepository;
     @Mock TokenCounter tokenCounter;
     @Mock AiConfigureRepository aiConfigureRepository;
     @Mock ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
@@ -52,7 +54,7 @@ class ContentServiceOwnershipTest {
                 .revisionDepth(RevisionDepth.BALANCED)
                 .status(Status.PROCESSING_FAILED)
                 .build();
-        service = new ContentServiceImpl(100, topicRepository, contentRepository, tokenCounter,
+        service = new ContentServiceImpl(100, topicRepository, contentRepository, recallItemRepository, tokenCounter,
                 aiConfigureRepository, contentPublisher);
     }
 
@@ -104,6 +106,7 @@ class ContentServiceOwnershipTest {
                 () -> service.deleteContentById(contentId.toString(), otherUserId.toString()));
 
         verify(contentRepository, never()).delete(any(Content.class));
+        verifyNoInteractions(recallItemRepository);
     }
 
     @Test

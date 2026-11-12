@@ -25,12 +25,13 @@ class ContentServiceImplTest {
 
     @Mock TopicRepository topicRepository;
     @Mock ContentRepository contentRepository;
+    @Mock RecallItemRepository recallItemRepository;
     @Mock TokenCounter tokenCounter;
     @Mock AiConfigureRepository aiConfigureRepository;
     @Mock ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
 
     private ContentServiceImpl createService() {
-        return new ContentServiceImpl(TOKEN_LIMIT, topicRepository, contentRepository, tokenCounter,
+        return new ContentServiceImpl(TOKEN_LIMIT, topicRepository, contentRepository, recallItemRepository, tokenCounter,
                 aiConfigureRepository, contentPublisher);
     }
 
@@ -67,5 +68,21 @@ class ContentServiceImplTest {
         assertThrows(BitRecallException.class, () -> service.createContent(topicId.toString(),
                 new CreateContentRequest("small", "unknown"), userId.toString()));
         verifyNoInteractions(contentRepository);
+    }
+
+    @Test
+    void deletesRecallItemsBeforeDeletingContent() {
+        UUID topicId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID contentId = UUID.randomUUID();
+        Topic topic = Topic.builder().id(topicId).user(User.builder().id(userId).build()).build();
+        Content content = Content.builder().id(contentId).topic(topic).build();
+        when(contentRepository.findById(contentId)).thenReturn(Optional.of(content));
+
+        createService().deleteContentById(contentId.toString(), userId.toString());
+
+        var inOrder = inOrder(recallItemRepository, contentRepository);
+        inOrder.verify(recallItemRepository).deleteByContentId(contentId);
+        inOrder.verify(contentRepository).delete(content);
     }
 }

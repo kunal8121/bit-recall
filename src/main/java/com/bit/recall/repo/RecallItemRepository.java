@@ -32,4 +32,8 @@ public interface RecallItemRepository extends JpaRepository<RecallItem, UUID> {
                                    int pageSize,
                                    Instant lastCreatedAt,
                                    UUID lastId);
+
+    void deleteByContentId(UUID contentId);
+
+    void deleteByTopicId(UUID topicId);
 }

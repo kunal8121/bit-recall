@@ -7,6 +7,7 @@ import com.bit.recall.domain.model.CreateTopicRequest;
 import com.bit.recall.exception.BitRecallErrorCode;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
+import com.bit.recall.repo.RecallItemRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.TopicService;
 import io.micronaut.core.util.CollectionUtils;
@@ -26,6 +27,7 @@ public class TopicServiceImpl implements TopicService {
 
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;
+    private final RecallItemRepository recallItemRepository;
 
     @Transactional
     @Override
@@ -58,11 +60,12 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
+    @Transactional
     public void deleteTopicById(String id, String userId) {
         Topic topic = topicRepository
                 .findByIdAndUserId(UUID.fromString(id), UUID.fromString(userId))
                 .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + id));
-
+        recallItemRepository.deleteByTopicId(topic.getId());
         topicRepository.delete(topic);
     }
 
