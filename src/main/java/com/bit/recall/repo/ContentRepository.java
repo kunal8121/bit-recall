@@ -50,7 +50,7 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
             WHERE c.status = 'UNPROCESSED'
               AND (c.processing_attempt_count < :maxRetries OR :maxRetries IS NULL)
               AND COALESCE(c.process_requested_at, c.created_at)
-                    <= NOW() - (CAST(:orphanAfter AS INTEGER) * INTERVAL '1 second')
+                    <= NOW() - (CAST(:orphanAfter AS INTEGER) * INTERVAL '1' SECOND)
             ORDER BY COALESCE(c.process_requested_at, c.created_at) ASC
             """)
     List<Content> findOrphanedUnprocessedItems(@Nullable Integer maxRetries, int orphanAfter);
@@ -62,7 +62,7 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
               AND (
                   CAST(:staleAfter AS INTEGER) IS NULL
                   OR c.last_processing_attempt_at IS NULL
-                  OR (NOW() - c.last_processing_attempt_at) > (CAST(:staleAfter AS INTEGER) * INTERVAL '1 second')
+                  OR (NOW() - c.last_processing_attempt_at) > (CAST(:staleAfter AS INTEGER) * INTERVAL '1' SECOND)
               )
             ORDER BY c.created_at ASC
             """)

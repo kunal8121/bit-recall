@@ -1,6 +1,7 @@
 package com.bit.recall.repo;
 
 import com.bit.recall.domain.RecallItem;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.jpa.repository.JpaRepository;
@@ -21,8 +22,8 @@ public interface RecallItemRepository extends JpaRepository<RecallItem, UUID> {
             WHERE ri.topic_id = :topicId
               AND t.user_id = :userId
               AND (
-                  :lastCreatedAt IS NULL
-                  OR (ri.created_at, ri.id) < (:lastCreatedAt, :lastId)
+                  CAST(:lastCreatedAt AS TIMESTAMP) IS NULL
+                  OR (ri.created_at, ri.id) < (CAST(:lastCreatedAt AS TIMESTAMP), CAST(:lastId AS UUID))
               )
             ORDER BY ri.created_at DESC, ri.id DESC
             LIMIT :pageSize;
@@ -30,8 +31,8 @@ public interface RecallItemRepository extends JpaRepository<RecallItem, UUID> {
     List<RecallItem> findByTopicId(UUID topicId,
                                    UUID userId,
                                    int pageSize,
-                                   Instant lastCreatedAt,
-                                   UUID lastId);
+                                   @Nullable Instant lastCreatedAt,
+                                   @Nullable UUID lastId);
 
     void deleteByContentId(UUID contentId);
 
