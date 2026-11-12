@@ -14,6 +14,7 @@ import com.bit.recall.service.ContentService;
 import com.bit.recall.utils.TokenCounter;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.context.event.ApplicationEventPublisher;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,17 +29,29 @@ import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Singleton
-@RequiredArgsConstructor
 public class ContentServiceImpl implements ContentService {
 
-    @Value("${bit-recall.content.max-tokens: 20000}")
-    private final int MAX_TOKEN_LIMIT;
+    private final int maxTokenLimit;
 
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;
     private final TokenCounter tokenCounter;
     private final AiConfigureRepository aiConfigureRepository;
     private final ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
+
+    public ContentServiceImpl(@Value("${bit-recall.content.max-tokens:20000}") int maxTokenLimit,
+                              TopicRepository topicRepository,
+                              ContentRepository contentRepository,
+                              TokenCounter tokenCounter,
+                              AiConfigureRepository aiConfigureRepository,
+                              ApplicationEventPublisher<ContentCreatedEvent> contentPublisher) {
+        this.maxTokenLimit = maxTokenLimit;
+        this.topicRepository = topicRepository;
+        this.contentRepository = contentRepository;
+        this.tokenCounter = tokenCounter;
+        this.aiConfigureRepository = aiConfigureRepository;
+        this.contentPublisher = contentPublisher;
+    }
 
     @Override
     public Content createContent(String topicId, CreateContentRequest createContentRequest, String userId) {
@@ -47,8 +60,8 @@ public class ContentServiceImpl implements ContentService {
 
         //count tokens before creating content
         var tokenCount = tokenCounter.countTokens(createContentRequest.text());
-        if(tokenCount > MAX_TOKEN_LIMIT) {
-            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT + ". Current token count: " + tokenCount);
+        if(tokenCount > maxTokenLimit) {
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + maxTokenLimit + ". Current token count: " + tokenCount);
         }
 
         var revisionDepth = resolveRevisionDepth(createContentRequest.revisionDepth());
@@ -130,8 +143,8 @@ public class ContentServiceImpl implements ContentService {
             throw new BitRecallException(BitRecallErrorCode.CONFLICT, "Content is already being processed");
         }
         int tokenCount = tokenCounter.countTokens(updateableContent.getText());
-        if (tokenCount > MAX_TOKEN_LIMIT) {
-            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + MAX_TOKEN_LIMIT
+        if (tokenCount > maxTokenLimit) {
+            throw new BitRecallException(BitRecallErrorCode.BAD_REQUEST, "Content exceeds maximum token limit of " + maxTokenLimit
                     + ". Current token count: " + tokenCount);
         }
 
@@ -196,6 +209,8 @@ public class ContentServiceImpl implements ContentService {
         ContentCreatedEvent event = ContentCreatedEvent.builder()
                 .id(UUID.randomUUID().toString())
                 .contentId(content.getId().toString())
+                .topicId(content.getTopic().getId().toString())
+                .userId(content.getTopic().getUser().getId().toString())
                 .build();
         contentPublisher.publishEvent(event);
         log.info("Published ContentCreatedEvent for contentId: {}", content.getId());

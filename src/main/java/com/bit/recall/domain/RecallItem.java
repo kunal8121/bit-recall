@@ -2,28 +2,27 @@ package com.bit.recall.domain;
 
 import io.micronaut.data.annotation.DateCreated;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity(name = "recall_items")
+@Entity
 @Table(
         name = "recall_items",
         indexes = {
-                @Index(name = "idx_recall_items_crated_at", columnList = "id, created_at, topic_id")
+                @Index(name = "idx_recall_items_created_at", columnList = "id, created_at, topic_id")
         }
 )
-@Builder
+@Builder(toBuilder = true)
 public class RecallItem {
 
     @Id
+    @Column(name = "id")
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,20 +30,22 @@ public class RecallItem {
     private Content content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "topicId")
+    @JoinColumn(name = "topic_id")
     private Topic topic;
 
+    @Column(length = 512)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String question;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String summaryBody;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String metaData;
 
     @DateCreated
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 }

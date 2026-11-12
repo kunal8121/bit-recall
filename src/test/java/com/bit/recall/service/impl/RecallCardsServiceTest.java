@@ -47,12 +47,14 @@ class RecallCardsServiceTest {
         UUID attemptId = UUID.randomUUID();
         Content content = Content.builder().id(contentId).build();
         Topic topic = Topic.builder().id(UUID.randomUUID()).build();
+        when(topicRepository.findById(topic.getId())).thenReturn(Optional.of(topic));
+        when(contentRepository.findById(contentId)).thenReturn(Optional.of(content));
         when(recallItemRepository.findByContentId(contentId)).thenReturn(List.of());
         when(contentRepository.markAttemptProcessed(contentId, attemptId)).thenReturn(1);
         RecallCardDto card = RecallCardDto.builder().title("Title").recall("Question")
                 .explanation("Answer").type("concept").build();
 
-        createService().persist(List.of(card), topic, content, attemptId);
+        createService().persist(List.of(card), topic.getId(), contentId, attemptId);
 
         ArgumentCaptor<RecallItem> savedItem = ArgumentCaptor.forClass(RecallItem.class);
         verify(recallItemRepository).save(savedItem.capture());
@@ -66,11 +68,14 @@ class RecallCardsServiceTest {
     void failsIfProcessingAttemptNoLongerOwnsContent() {
         UUID contentId = UUID.randomUUID();
         Content content = Content.builder().id(contentId).build();
+        UUID topicId = UUID.randomUUID();
+        when(topicRepository.findById(topicId)).thenReturn(Optional.of(Topic.builder().id(topicId).build()));
+        when(contentRepository.findById(contentId)).thenReturn(Optional.of(content));
         when(recallItemRepository.findByContentId(contentId)).thenReturn(List.of());
         when(contentRepository.markAttemptProcessed(eq(contentId), any())).thenReturn(0);
 
         assertThrows(IllegalStateException.class, () -> createService().persist(List.of(),
-                Topic.builder().build(), content, UUID.randomUUID()));
+                topicId, contentId, UUID.randomUUID()));
     }
 
     @Test

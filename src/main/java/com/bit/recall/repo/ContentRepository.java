@@ -1,7 +1,6 @@
 package com.bit.recall.repo;
 
 import com.bit.recall.domain.Content;
-import com.bit.recall.domain.Status;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
@@ -51,7 +50,7 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
             WHERE c.status = 'UNPROCESSED'
               AND (c.processing_attempt_count < :maxRetries OR :maxRetries IS NULL)
               AND COALESCE(c.process_requested_at, c.created_at)
-                    <= NOW() - (:orphanAfter * INTERVAL '1 second')
+                    <= NOW() - (CAST(:orphanAfter AS INTEGER) * INTERVAL '1 second')
             ORDER BY COALESCE(c.process_requested_at, c.created_at) ASC
             """)
     List<Content> findOrphanedUnprocessedItems(@Nullable Integer maxRetries, int orphanAfter);
@@ -61,14 +60,14 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
             WHERE c.status = :status
               AND (c.processing_attempt_count < :maxRetries OR :maxRetries IS NULL)
               AND (
-                  :staleAfter IS NULL
+                  CAST(:staleAfter AS INTEGER) IS NULL
                   OR c.last_processing_attempt_at IS NULL
-                  OR (NOW() - c.last_processing_attempt_at) > (:staleAfter * INTERVAL '1 second')
+                  OR (NOW() - c.last_processing_attempt_at) > (CAST(:staleAfter AS INTEGER) * INTERVAL '1 second')
               )
             ORDER BY c.created_at ASC
             """)
     List<Content> findByStatus(
-            Status status,
+            String status,
             @Nullable Integer maxRetries,
             @Nullable Integer staleAfter);
 }

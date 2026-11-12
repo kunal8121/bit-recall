@@ -3,6 +3,8 @@ package com.bit.recall.service.impl;
 import com.bit.recall.config.ContentProcessorConfig;
 import com.bit.recall.domain.Content;
 import com.bit.recall.domain.Status;
+import com.bit.recall.domain.Topic;
+import com.bit.recall.domain.User;
 import com.bit.recall.domain.model.ContentCreatedEvent;
 import com.bit.recall.repo.ContentRepository;
 import com.bit.recall.service.ContentProcessingService;
@@ -25,10 +27,10 @@ class ContentProcessingRetryServiceTest {
 
     @Test
     void dispatchesFailedContentForRetry() {
-        Content failedContent = Content.builder().id(UUID.randomUUID()).build();
-        when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null))
+        Content failedContent = contentWithOwner();
+        when(contentRepository.findByStatus(Status.PROCESSING_FAILED.name(), 3, null))
                 .thenReturn(List.of(failedContent));
-        when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of());
+        when(contentRepository.findByStatus(Status.PROCESSING.name(), 3, 600)).thenReturn(List.of());
         when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of());
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
@@ -40,9 +42,9 @@ class ContentProcessingRetryServiceTest {
 
     @Test
     void dispatchesStaleProcessingContentForRetry() {
-        Content staleContent = Content.builder().id(UUID.randomUUID()).build();
-        when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null)).thenReturn(List.of());
-        when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of(staleContent));
+        Content staleContent = contentWithOwner();
+        when(contentRepository.findByStatus(Status.PROCESSING_FAILED.name(), 3, null)).thenReturn(List.of());
+        when(contentRepository.findByStatus(Status.PROCESSING.name(), 3, 600)).thenReturn(List.of(staleContent));
         when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of());
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
@@ -54,9 +56,9 @@ class ContentProcessingRetryServiceTest {
 
     @Test
     void dispatchesUnprocessedContentForRetry() {
-        Content unprocessedContent = Content.builder().id(UUID.randomUUID()).build();
-        when(contentRepository.findByStatus(Status.PROCESSING_FAILED, 3, null)).thenReturn(List.of());
-        when(contentRepository.findByStatus(Status.PROCESSING, 3, 600)).thenReturn(List.of());
+        Content unprocessedContent = contentWithOwner();
+        when(contentRepository.findByStatus(Status.PROCESSING_FAILED.name(), 3, null)).thenReturn(List.of());
+        when(contentRepository.findByStatus(Status.PROCESSING.name(), 3, 600)).thenReturn(List.of());
         when(contentRepository.findOrphanedUnprocessedItems(3, 600)).thenReturn(List.of(unprocessedContent));
         ContentProcessingRetryService service = new ContentProcessingRetryService(contentRepository,
                 new ContentProcessorConfig(600, 600, 3), contentProcessingService);
@@ -83,5 +85,17 @@ class ContentProcessingRetryServiceTest {
         verify(contentProcessingService).processContent(eventCaptor.capture());
 
         assertEquals(expectedContentId.toString(), eventCaptor.getValue().contentId());
+        assertEquals("00000000-0000-0000-0000-000000000001", eventCaptor.getValue().topicId());
+        assertEquals("00000000-0000-0000-0000-000000000002", eventCaptor.getValue().userId());
+    }
+
+    private Content contentWithOwner() {
+        return Content.builder()
+                .id(UUID.randomUUID())
+                .topic(Topic.builder()
+                        .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+                        .user(User.builder().id(UUID.fromString("00000000-0000-0000-0000-000000000002")).build())
+                        .build())
+                .build();
     }
 }

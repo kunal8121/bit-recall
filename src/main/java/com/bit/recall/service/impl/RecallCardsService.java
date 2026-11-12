@@ -38,7 +38,11 @@ public class RecallCardsService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Transactional
-    public void persist(List<RecallCardDto> recallCards, Topic topic, Content content, UUID attemptId) throws JsonProcessingException {
+    public void persist(List<RecallCardDto> recallCards, UUID topicId, UUID contentId, UUID attemptId) throws JsonProcessingException {
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Topic not found with id: " + topicId));
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new BitRecallException(BitRecallErrorCode.NOT_FOUND, "Content not found with id: " + contentId));
         // Replace cards only after generation succeeded; the transaction keeps the old set if persistence fails.
         recallItemRepository.deleteAll(recallItemRepository.findByContentId(content.getId()));
         for (RecallCardDto recallDto : recallCards) {
