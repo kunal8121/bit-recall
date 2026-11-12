@@ -44,7 +44,13 @@ class UserJourneyE2ETest implements TestPropertyProvider {
             OPENAI.start();
         }
         if (!POSTGRES.isRunning()) {
-            POSTGRES.start();
+            try {
+                POSTGRES.start();
+            } catch (RuntimeException startupFailure) {
+                throw new IllegalStateException(
+                        "Could not start the PostgreSQL Testcontainer. Verify that the CI Docker daemon is available and can pull postgres:16-alpine.",
+                        startupFailure);
+            }
         }
         return Map.of(
                 "bit-recall.ai.openai.base-url", OPENAI.baseUrl() + "/v1",
