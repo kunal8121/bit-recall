@@ -9,6 +9,7 @@ import com.bit.recall.exception.BitRecallErrorCode;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.AiConfigureRepository;
 import com.bit.recall.repo.ContentRepository;
+import com.bit.recall.repo.RecallItemRepository;
 import com.bit.recall.repo.TopicRepository;
 import com.bit.recall.service.ContentService;
 import com.bit.recall.utils.TokenCounter;
@@ -16,6 +17,7 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,19 +37,21 @@ public class ContentServiceImpl implements ContentService {
 
     private final TopicRepository topicRepository;
     private final ContentRepository contentRepository;
+    private final RecallItemRepository recallItemRepository;
     private final TokenCounter tokenCounter;
     private final AiConfigureRepository aiConfigureRepository;
     private final ApplicationEventPublisher<ContentCreatedEvent> contentPublisher;
 
     public ContentServiceImpl(@Value("${bit-recall.content.max-tokens:20000}") int maxTokenLimit,
                               TopicRepository topicRepository,
-                              ContentRepository contentRepository,
+                              ContentRepository contentRepository, RecallItemRepository recallItemRepository,
                               TokenCounter tokenCounter,
                               AiConfigureRepository aiConfigureRepository,
                               ApplicationEventPublisher<ContentCreatedEvent> contentPublisher) {
         this.maxTokenLimit = maxTokenLimit;
         this.topicRepository = topicRepository;
         this.contentRepository = contentRepository;
+        this.recallItemRepository = recallItemRepository;
         this.tokenCounter = tokenCounter;
         this.aiConfigureRepository = aiConfigureRepository;
         this.contentPublisher = contentPublisher;
@@ -120,6 +124,7 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
+    @Transactional
     public void deleteContentById( String contentId, String userId) {
         Content content = contentRepository.findById(UUID.fromString(contentId))
                 .orElseThrow(() ->
@@ -128,6 +133,7 @@ public class ContentServiceImpl implements ContentService {
         if (!content.getTopic().getUser().getId().equals(UUID.fromString(userId))) {
             throw new BitRecallException(BitRecallErrorCode.FORBIDDEN, "You don't have access to this content");
         }
+        recallItemRepository.deleteByContentId(content.getId());
         contentRepository.delete(content);
     }
 

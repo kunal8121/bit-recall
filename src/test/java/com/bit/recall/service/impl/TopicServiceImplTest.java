@@ -5,6 +5,7 @@ import com.bit.recall.domain.User;
 import com.bit.recall.domain.model.CreateTopicRequest;
 import com.bit.recall.exception.BitRecallException;
 import com.bit.recall.repo.ContentRepository;
+import com.bit.recall.repo.RecallItemRepository;
 import com.bit.recall.repo.TopicRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,12 +23,13 @@ import static org.mockito.Mockito.*;
 class TopicServiceImplTest {
     @Mock TopicRepository topicRepository;
     @Mock ContentRepository contentRepository;
+    @Mock RecallItemRepository recallItemRepository;
 
     @Test
     void createsTopicForUser() {
         when(topicRepository.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
         User user = User.builder().id(UUID.randomUUID()).build();
-        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
+        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository, recallItemRepository);
 
         Topic topic = service.createTopicWithUser(new CreateTopicRequest("Math", "desc"), user);
 
@@ -43,11 +45,13 @@ class TopicServiceImplTest {
         UUID userId = UUID.randomUUID();
         Topic topic = Topic.builder().id(topicId).build();
         when(topicRepository.findByIdAndUserId(topicId, userId)).thenReturn(Optional.of(topic));
-        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
+        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository, recallItemRepository);
 
         assertSame(topic, service.getTopicById(topicId.toString(), userId.toString()));
         service.deleteTopicById(topicId.toString(), userId.toString());
-        verify(topicRepository).delete(topic);
+        var inOrder = inOrder(recallItemRepository, topicRepository);
+        inOrder.verify(recallItemRepository).deleteByTopicId(topicId);
+        inOrder.verify(topicRepository).delete(topic);
 
         when(topicRepository.findByIdAndUserId(topicId, userId)).thenReturn(Optional.empty());
         assertThrows(BitRecallException.class,
@@ -61,7 +65,7 @@ class TopicServiceImplTest {
         Topic existing = Topic.builder().id(topicId).title("Old").description("Old description").build();
         when(topicRepository.findByIdAndUserId(topicId, userId)).thenReturn(Optional.of(existing));
         when(topicRepository.save(existing)).thenReturn(existing);
-        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
+        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository, recallItemRepository);
 
         Topic updated = service.updateTopic(topicId.toString(),
                 Topic.builder().title("New").description("New description").build(), userId.toString());
@@ -77,7 +81,7 @@ class TopicServiceImplTest {
         UUID topicId = UUID.randomUUID();
         UUID otherUserId = UUID.randomUUID();
         when(topicRepository.findByIdAndUserId(topicId, otherUserId)).thenReturn(Optional.empty());
-        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository);
+        TopicServiceImpl service = new TopicServiceImpl(topicRepository, contentRepository, recallItemRepository);
 
         assertThrows(BitRecallException.class, () -> service.updateTopic(topicId.toString(),
                 Topic.builder().title("Changed by another user").build(), otherUserId.toString()));
@@ -86,6 +90,7 @@ class TopicServiceImplTest {
 
         verify(topicRepository, never()).save(any(Topic.class));
         verify(topicRepository, never()).delete(any(Topic.class));
+        verifyNoInteractions(recallItemRepository);
         verify(topicRepository, times(2)).findByIdAndUserId(topicId, otherUserId);
     }
 }

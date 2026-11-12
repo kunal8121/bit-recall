@@ -40,6 +40,9 @@ bit-recall:
     secret: ${BASE64_SECRET}
   content:
     max-tokens: 20000
+  ai:
+    openai:
+      base-url: https://api.openai.com/v1
   processing:
     stale-after: 600
     orphan-after: 120
