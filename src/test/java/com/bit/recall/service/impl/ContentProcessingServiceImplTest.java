@@ -45,10 +45,12 @@ class ContentProcessingServiceImplTest {
                 new ContentProcessorConfig(600, 600, 3));
     }
 
-    private ContentCreatedEvent eventFor(UUID contentId) {
+    private ContentCreatedEvent eventFor(UUID contentId, UUID topicId, UUID userId) {
         return ContentCreatedEvent.builder()
                 .id(UUID.randomUUID().toString())
                 .contentId(contentId.toString())
+                .topicId(topicId.toString())
+                .userId(userId.toString())
                 .build();
     }
 
@@ -57,7 +59,7 @@ class ContentProcessingServiceImplTest {
         UUID contentId = UUID.randomUUID();
         when(contentRepository.claimForProcessing(eq(contentId), any(UUID.class), eq(3), any(Instant.class)))
                 .thenReturn(0);
-        createService().processContent(eventFor(contentId));
+        createService().processContent(eventFor(contentId, UUID.randomUUID(), UUID.randomUUID()));
 
         verify(contentRepository).claimForProcessing(eq(contentId), any(UUID.class), eq(3), any(Instant.class));
         verify(contentRepository, never()).findById(contentId);
@@ -95,11 +97,11 @@ class ContentProcessingServiceImplTest {
         when(recallItemGenerator.generateRecallItems(eq(chatModel), anyString(), contains("SOURCE MATERIAL:")))
                 .thenReturn(cards);
 
-        createService().processContent(eventFor(contentId));
+        createService().processContent(eventFor(contentId, content.getTopic().getId(), userId));
 
         verify(recallItemGenerator).generateRecallItems(eq(chatModel), anyString(),
                 argThat(prompt -> prompt.contains("Revision Depth: BALANCED") && prompt.contains("source text")));
-        verify(recallCardsService).persist(cards, content.getTopic(), content, claimedAttemptId[0]);
+        verify(recallCardsService).persist(cards, content.getTopic().getId(), contentId, claimedAttemptId[0]);
         verify(contentRepository, never()).markAttemptFailed(eq(contentId), any(UUID.class), any(Instant.class));
     }
 
@@ -126,7 +128,7 @@ class ContentProcessingServiceImplTest {
                 .thenThrow(generationFailure);
 
         assertThrows(com.bit.recall.exception.BitRecallException.class,
-                () -> createService().processContent(eventFor(contentId)));
+                () -> createService().processContent(eventFor(contentId, content.getTopic().getId(), userId)));
 
         verify(contentRepository).markAttemptFailed(eq(contentId), any(UUID.class), any(Instant.class));
         verifyNoInteractions(recallCardsService);
