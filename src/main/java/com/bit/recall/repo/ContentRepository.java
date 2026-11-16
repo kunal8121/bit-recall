@@ -70,4 +70,43 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
             String status,
             @Nullable Integer maxRetries,
             @Nullable Integer staleAfter);
+
+
+    @Query(value = """
+        SELECT *
+        FROM contents
+        WHERE status = 'PROCESSING_FAILED'
+          AND processing_attempt_count < :maxRetries
+          AND (
+              next_attempt_at IS NULL
+              OR next_attempt_at <= CURRENT_TIMESTAMP
+          )
+        """, nativeQuery = true)
+    List<Content> findRetryableFailedContents(int maxRetries);
+
+
+    // 2. Contents stuck in PROCESSING
+    @Query(value = """
+        SELECT *
+        FROM contents
+        WHERE status = 'PROCESSING'
+          AND (
+              last_processing_attempt_at IS NULL
+              OR last_processing_attempt_at <= :staleBefore
+          )
+        """, nativeQuery = true)
+    List<Content> findStaleProcessingContents(
+            Instant staleBefore
+    );
+
+    // 3. Contents whose processing event was not handled
+    @Query(value = """
+        SELECT *
+        FROM contents
+        WHERE status = 'UNPROCESSED'
+          AND process_requested_at <= :orphanedBefore
+        """, nativeQuery = true)
+    List<Content> findOrphanedUnprocessedContents(
+            Instant orphanedBefore
+    );
 }
